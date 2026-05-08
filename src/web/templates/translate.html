@@ -84,7 +84,10 @@
                 data-section-id="{{ sec.section_id }}"
                 data-type="{{ ch.type|default('para') }}">
               <div class="chunk-pair">
-                <pre class="src">{{ ch.src }}</pre>
+                <pre class="src">{% for sen in ch.src_sentences -%}
+{%- if not loop.first %} {% endif -%}
+<span class="sentence" data-sentence-idx="{{ loop.index0 }}">{{ sen }}</span>
+{%- endfor %}</pre>
                 <textarea class="dst"
                           data-chunk-id="{{ ch.id }}"
                           placeholder="{% if ch.type == 'heading' %}見出し{% elif ch.type == 'block' %}この塊{% else %}この段落{% endif %}の訳文"

@@ -208,6 +208,110 @@ def _is_metadata_only(p: str) -> bool:
     return all(_METADATA_LINE_RE.match(ln) for ln in lines)
 
 
+# ── 文単位 split (Phase 2A.6) ──────────────────────────────────────
+
+# 文末記号の後の空白で split。<ref>...</ref> 内部の . は無視する必要がある
+_REF_TAG_RE = re.compile(r"<ref\b[^>]*>.*?</ref>|<ref\b[^/]*/>", re.DOTALL | re.IGNORECASE)
+_ELLIPSIS_RE = re.compile(r"\.\.\.|……?|…")
+_JA_TERMINATORS = "。!？"
+_EN_TERMINATORS = ".!?"
+_CLOSING_QUOTES = "」』）)"
+
+
+def _find_sentence_boundaries(text: str) -> list[int]:
+    """
+    text 中の「文の切れ目」位置リストを返す。
+
+    切れ目の定義:
+      - 日本語: 。 / ! / ？ の直後 (閉じ括弧の前は切れ目にしない)
+      - 英語  : . / ! / ? の後にホワイトスペース (任意で <ref>...</ref> を間に挟んでよい)
+      - 省略記号 (... / …) は文末扱いしない
+      - <ref>...</ref> 内部の . は無視する
+    返す int は「次の文が始まる位置」(= text[boundary:] が次の文)。
+    """
+    if not text:
+        return []
+
+    ref_spans = [(m.start(), m.end()) for m in _REF_TAG_RE.finditer(text)]
+    ell_spans = [(m.start(), m.end()) for m in _ELLIPSIS_RE.finditer(text)]
+
+    def in_span(pos: int, spans: list[tuple[int, int]]) -> tuple[int, int] | None:
+        for s, e in spans:
+            if s <= pos < e:
+                return (s, e)
+        return None
+
+    boundaries: list[int] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        rs = in_span(i, ref_spans)
+        if rs:
+            i = rs[1]
+            continue
+        es = in_span(i, ell_spans)
+        if es:
+            i = es[1]
+            continue
+
+        c = text[i]
+        if c in _JA_TERMINATORS:
+            j = i + 1
+            if j < n and text[j] in _CLOSING_QUOTES:
+                i = j
+                continue
+            # Attach following <ref>..</ref> to the preceding sentence
+            while j < n:
+                rs = in_span(j, ref_spans)
+                if rs and rs[0] == j:
+                    j = rs[1]
+                else:
+                    break
+            # Skip a single trailing whitespace if any (else the space starts next sentence)
+            if j < n and text[j] == " ":
+                j += 1
+            boundaries.append(j)
+            i = j
+            continue
+        if c in _EN_TERMINATORS:
+            j = i + 1
+            # 直後が ref タグなら、その先まで進める (ref を sentence 1 に含める)
+            while j < n:
+                rs = in_span(j, ref_spans)
+                if rs and rs[0] == j:
+                    j = rs[1]
+                else:
+                    break
+            if j < n and text[j].isspace():
+                while j < n and text[j].isspace():
+                    j += 1
+                boundaries.append(j)
+                i = j
+                continue
+            i = j
+            continue
+        i += 1
+
+    return boundaries
+
+
+def split_into_sentences(text: str) -> list[str]:
+    """段落内の wikitext を文のリストに分解する。"""
+    if not text or not text.strip():
+        return []
+    bounds = _find_sentence_boundaries(text)
+    parts: list[str] = []
+    last = 0
+    for b in bounds:
+        if b <= last:
+            continue
+        parts.append(text[last:b])
+        last = b
+    if last < len(text):
+        parts.append(text[last:])
+    return [p.strip() for p in parts if p.strip()]
+
+
 def parse_paragraphs(wikitext: str) -> list[Chunk]:
     """
     Phase 2A.5: 段落単位で分割する新パーサー。

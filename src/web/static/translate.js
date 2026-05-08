@@ -121,6 +121,102 @@
     debouncers.set(chunkId, t);
   }
 
+  // ── 文単位ハイライト ──
+  // Python (wikitext.py::_find_sentence_boundaries) と同じロジックを再実装
+  const REF_RE = /<ref\b[^>]*>[\s\S]*?<\/ref>|<ref\b[^/]*\/>/g;
+  const ELLIPSIS_RE = /\.\.\.|……?|…/g;
+  const JA_TERM = "。!？";
+  const EN_TERM = ".!?";
+  const CLOSE_QUOTE = "」』）)";
+
+  function findSpans(text, re) {
+    const spans = [];
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      spans.push([m.index, m.index + m[0].length]);
+      if (m[0].length === 0) re.lastIndex++;
+    }
+    return spans;
+  }
+  function inSpan(pos, spans) {
+    for (const [s, e] of spans) {
+      if (s <= pos && pos < e) return [s, e];
+    }
+    return null;
+  }
+
+  function countSentencesBefore(text, upTo) {
+    const refSpans = findSpans(text, REF_RE);
+    const ellSpans = findSpans(text, ELLIPSIS_RE);
+    let count = 0;
+    let i = 0;
+    const n = text.length;
+    while (i < n) {
+      if (i >= upTo) break;
+      let rs = inSpan(i, refSpans);
+      if (rs) { i = rs[1]; continue; }
+      let es = inSpan(i, ellSpans);
+      if (es) { i = es[1]; continue; }
+      const c = text[i];
+      if (JA_TERM.includes(c)) {
+        let j = i + 1;
+        if (j < n && CLOSE_QUOTE.includes(text[j])) { i = j; continue; }
+        // attach trailing refs
+        while (j < n) {
+          const r = inSpan(j, refSpans);
+          if (r && r[0] === j) j = r[1];
+          else break;
+        }
+        if (j < n && text[j] === " ") j += 1;
+        if (j > upTo) break;
+        count += 1;
+        i = j;
+        continue;
+      }
+      if (EN_TERM.includes(c)) {
+        let j = i + 1;
+        while (j < n) {
+          const r = inSpan(j, refSpans);
+          if (r && r[0] === j) j = r[1];
+          else break;
+        }
+        if (j < n && /\s/.test(text[j])) {
+          while (j < n && /\s/.test(text[j])) j++;
+          if (j > upTo) break;
+          count += 1;
+          i = j;
+          continue;
+        }
+        i = j;
+        continue;
+      }
+      i++;
+    }
+    return count;
+  }
+
+  function highlightSentence(chunkEl, idx) {
+    const pre = chunkEl.querySelector("pre.src");
+    if (!pre) return;
+    pre.querySelectorAll(".sentence.sentence-active").forEach((el) =>
+      el.classList.remove("sentence-active")
+    );
+    let target = pre.querySelector(`.sentence[data-sentence-idx="${idx}"]`);
+    if (!target) {
+      // 範囲外: 最後の文を highlight (cursor が末尾にある場合)
+      const all = pre.querySelectorAll(".sentence");
+      target = all[all.length - 1];
+    }
+    if (target) target.classList.add("sentence-active");
+  }
+
+  function syncSentence(ta, chunkEl) {
+    const pos = ta.selectionStart;
+    const idx = countSentencesBefore(ta.value, pos);
+    highlightSentence(chunkEl, idx);
+  }
+
   chunks.forEach((chunkEl) => {
     const ta = chunkEl.querySelector("textarea.dst");
     if (!ta) return;
@@ -131,20 +227,28 @@
       document.querySelectorAll(".chunk.active").forEach((el) =>
         el.classList.remove("active")
       );
+      // 全 chunk の sentence-active も消す
+      document.querySelectorAll(".sentence-active").forEach((el) =>
+        el.classList.remove("sentence-active")
+      );
       chunkEl.classList.add("active");
       // 左 src を可視範囲に持ってくる
       const src = chunkEl.querySelector("pre.src");
       if (src) {
         src.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
+      syncSentence(ta, chunkEl);
     });
 
     ta.addEventListener("input", () => {
       scheduleAutoSave(chunkId, ta.value);
+      syncSentence(ta, chunkEl);
     });
 
+    ta.addEventListener("click", () => syncSentence(ta, chunkEl));
+    ta.addEventListener("keyup", () => syncSentence(ta, chunkEl));
+
     ta.addEventListener("blur", () => {
-      // pending debounce があれば確定保存
       const old = debouncers.get(chunkId);
       if (old) {
         clearTimeout(old);

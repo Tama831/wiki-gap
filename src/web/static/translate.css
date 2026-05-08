@@ -157,6 +157,18 @@ main.translate-main {
 .chunk.type-heading .chunk-pair textarea.dst { min-height: 2.4em; }
 .chunk.type-heading .chunk-pair pre.src { max-height: 4em; }
 
+/* sentence-level highlight (Phase 2A.6) */
+.chunk-pair pre.src .sentence {
+  display: inline;
+  border-radius: 0.18rem;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 0.05em 0.1em;
+}
+.chunk-pair pre.src .sentence.sentence-active {
+  background: rgba(255, 184, 0, 0.32);
+  box-shadow: 0 0 0 2px rgba(255, 138, 0, 0.45);
+}
+
 /* active chunk hilite (大幅強化) */
 .chunk.active {
   background: rgba(255, 220, 100, 0.13);

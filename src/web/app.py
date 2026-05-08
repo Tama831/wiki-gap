@@ -190,12 +190,19 @@ def translate_page(request: Request, qid: str):
 
     sections: list[dict] = []
     if translation:
-        # chunks を section_id で連続的にグループ化
+        # chunks を section_id で連続的にグループ化 + 文単位 split を付与
+        from src.translations.wikitext import split_into_sentences
         current: dict | None = None
         for ch in translation.get("chunks") or []:
             sid = ch.get("section_id", 0)
             sheading = ch.get("section_heading") or ch.get("heading") or "(intro)"
             slevel = ch.get("section_level", ch.get("level", 0))
+            ctype = ch.get("type", "para")
+            # 文単位 split は para にだけ適用 (heading/block は塊のまま)
+            if ctype == "para":
+                ch["src_sentences"] = split_into_sentences(ch.get("src", ""))
+            else:
+                ch["src_sentences"] = [ch.get("src", "")]
             if current is None or current["section_id"] != sid:
                 current = {
                     "section_id": sid,
