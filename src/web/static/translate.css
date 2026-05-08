@@ -131,13 +131,38 @@ main.translate-main {
   line-height: 1.5;
 }
 
-/* active chunk hilite */
+/* active chunk hilite (大幅強化) */
+.chunk.active {
+  background: rgba(255, 220, 100, 0.13);
+  border-radius: 0.4rem;
+  position: relative;
+}
+.chunk.active::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #ffb800, #ff8a00);
+  border-radius: 3px;
+}
 .chunk.active .chunk-heading {
-  border-left-color: var(--pico-primary, #1095c1);
+  border-left: 5px solid #ff8a00;
+  background: rgba(255, 184, 0, 0.18);
+  font-weight: 600;
+  color: #7a4600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
 }
 .chunk.active .chunk-pair pre.src {
-  border-color: var(--pico-primary, #1095c1);
-  background: rgba(16, 149, 193, 0.07);
+  border: 2px solid #ff8a00;
+  background: rgba(255, 220, 120, 0.22);
+  box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.18);
+}
+.chunk.active .chunk-pair textarea.dst {
+  border-color: #ff8a00;
+  box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.18);
 }
 
 /* level depth indent */
