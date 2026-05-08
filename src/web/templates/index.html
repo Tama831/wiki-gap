@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>wiki-gap — 日英ギャップ検出</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>wiki-gap <span class="muted">— 日英ギャップ検出</span></h1>
+      <p class="muted">total: {{ total }} articles · sorted by <strong>{{ sort }}</strong> ({{ direction }}) · category: <strong>{{ category or "all" }}</strong></p>
+    </header>
+
+    <form method="get" action="/" class="filters">
+      <label>category
+        <select name="category">
+          <option value="" {% if not category %}selected{% endif %}>all</option>
+          <option value="disease" {% if category == "disease" %}selected{% endif %}>disease</option>
+          <option value="drug" {% if category == "drug" %}selected{% endif %}>drug</option>
+          <option value="procedure" {% if category == "procedure" %}selected{% endif %}>procedure</option>
+        </select>
+      </label>
+      <label>sort
+        <select name="sort">
+          <option value="gap" {% if sort == "gap" %}selected{% endif %}>gap_score</option>
+          <option value="en_pv" {% if sort == "en_pv" %}selected{% endif %}>en pageviews 90d</option>
+          <option value="ja_pv" {% if sort == "ja_pv" %}selected{% endif %}>ja pageviews 90d</option>
+          <option value="en_bytes" {% if sort == "en_bytes" %}selected{% endif %}>en bytes</option>
+          <option value="ja_bytes" {% if sort == "ja_bytes" %}selected{% endif %}>ja bytes</option>
+          <option value="updated" {% if sort == "updated" %}selected{% endif %}>updated_at</option>
+        </select>
+      </label>
+      <label>direction
+        <select name="direction">
+          <option value="desc" {% if direction == "desc" %}selected{% endif %}>desc</option>
+          <option value="asc" {% if direction == "asc" %}selected{% endif %}>asc</option>
+        </select>
+      </label>
+      <label>limit
+        <input type="number" name="limit" value="{{ limit }}" min="1" max="1000" />
+      </label>
+      <button type="submit">Apply</button>
+      <a role="button" class="secondary outline" href="/export.csv?sort={{ sort }}&direction={{ direction }}&category={{ category }}&limit=10000">CSV</a>
+    </form>
+
+    <table class="striped">
+      <thead>
+        <tr>
+          <th>QID</th>
+          <th>category</th>
+          <th>en title</th>
+          <th class="num">en bytes</th>
+          <th>ja title</th>
+          <th class="num">ja bytes</th>
+          <th class="num">en pv 90d</th>
+          <th class="num">ja pv 90d</th>
+          <th class="num">gap</th>
+          <th>updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td><a href="https://www.wikidata.org/wiki/{{ r.qid }}" target="_blank" rel="noopener">{{ r.qid }}</a></td>
+          <td><span class="cat cat-{{ r.category }}">{{ r.category }}</span></td>
+          <td>
+            {% if r.en_url %}<a href="{{ r.en_url }}" target="_blank" rel="noopener">{{ r.en_title }}</a>{% else %}<span class="missing">(en なし)</span>{% endif %}
+          </td>
+          <td class="num">{{ "{:,}".format(r.en_bytes) if r.en_bytes else "—" }}</td>
+          <td>
+            {% if r.ja_url %}<a href="{{ r.ja_url }}" target="_blank" rel="noopener">{{ r.ja_title }}</a>{% else %}<span class="missing">(ja なし)</span>{% endif %}
+          </td>
+          <td class="num">{{ "{:,}".format(r.ja_bytes) if r.ja_bytes else "—" }}</td>
+          <td class="num">{{ "{:,}".format(r.en_pv_90d) if r.en_pv_90d else "—" }}</td>
+          <td class="num">{{ "{:,}".format(r.ja_pv_90d) if r.ja_pv_90d else "—" }}</td>
+          <td class="num gap">{{ "%.2f"|format(r.gap_score) if r.gap_score else "—" }}</td>
+          <td class="muted">{{ r.updated_at[:10] if r.updated_at else "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <footer>
+      <p class="muted">
+        <small>
+          gap_score = log(max_pv+1) × log(bigger_bytes+1) × imbalance / 10
+          (片側欠損は ×2 ブースト).
+          <a href="https://www.wikidata.org/" target="_blank">Wikidata</a> /
+          <a href="https://en.wikipedia.org/" target="_blank">Wikipedia EN</a> /
+          <a href="https://ja.wikipedia.org/" target="_blank">Wikipedia JA</a>
+        </small>
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

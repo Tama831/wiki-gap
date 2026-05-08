@@ -1,0 +1,26 @@
+[Unit]
+Description=wiki-gap dashboard (FastAPI + Uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tama
+Group=tama
+WorkingDirectory=/home/tama/wiki-gap
+Environment="PYTHONPATH=/home/tama/wiki-gap"
+EnvironmentFile=/home/tama/wiki-gap/.env
+# 127.0.0.1 限定: Tailscale 経由 / SSH トンネル経由でのみアクセス可能
+ExecStart=/home/tama/wiki-gap/.venv/bin/uvicorn src.web.app:app --host 127.0.0.1 --port 8766
+Restart=on-failure
+RestartSec=10s
+
+# セキュリティ
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/tama/wiki-gap/data /home/tama/wiki-gap/logs
+
+[Install]
+WantedBy=multi-user.target

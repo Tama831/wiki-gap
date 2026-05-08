@@ -1,0 +1,27 @@
+[Unit]
+Description=wiki-gap daily crawl (Wikidata + Wikipedia + Pageviews)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=tama
+Group=tama
+WorkingDirectory=/home/tama/wiki-gap
+Environment="PYTHONPATH=/home/tama/wiki-gap"
+EnvironmentFile=/home/tama/wiki-gap/.env
+# Phase 1 段階1: 疾患のみ・1000件
+# Phase 1 段階2 になったら --all --limit 0 に置き換える
+ExecStart=/home/tama/wiki-gap/.venv/bin/python scripts/run_crawl.py --category disease --limit 1000
+
+# クロールに 1 時間ぐらいかかる可能性に備える
+TimeoutStartSec=2h
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/tama/wiki-gap/data /home/tama/wiki-gap/logs
+
+[Install]
+WantedBy=multi-user.target

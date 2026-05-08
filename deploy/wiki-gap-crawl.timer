@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily wiki-gap crawl @ JST 03:00 (Wikimedia の負荷の薄い時間帯)
+
+[Timer]
+# JST 03:00 に毎日実行
+# サーバー TZ が JST であることを前提 (UTC ベースなら 18:00 で書く)
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target
