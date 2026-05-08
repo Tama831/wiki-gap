@@ -1,0 +1,163 @@
+/* Phase 2A 翻訳エディタ用スタイル */
+
+main.translate-main {
+  max-width: 100%;
+  padding: 0.8rem 1.2rem;
+}
+
+.translate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.2);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  background: var(--pico-background-color, #fff);
+  z-index: 10;
+}
+
+.translate-header h2 { margin: 0 0 0.3rem 0; font-size: 1.4rem; }
+.translate-header p { margin: 0; font-size: 0.85rem; }
+
+.translate-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.translate-actions a,
+.translate-actions button { padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--pico-primary, #1095c1);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.4rem;
+}
+.link-button:hover { text-decoration: underline; }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+}
+.status-draft { background: rgba(220, 180, 80, 0.12); }
+.status-review { background: rgba(80, 160, 220, 0.12); }
+.status-submitted { background: rgba(80, 200, 120, 0.12); }
+
+/* init card */
+.init-card {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  border-radius: 0.5rem;
+}
+.init-card form { display: flex; flex-direction: column; gap: 0.6rem; }
+
+/* split pane */
+.split-headers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  position: sticky;
+  top: 80px;
+  background: var(--pico-background-color, #fff);
+  padding: 0.4rem 0;
+  z-index: 9;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.15);
+}
+.split-headers h3 { margin: 0; font-size: 1rem; }
+
+.chunks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.chunk {
+  margin: 0;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.1);
+}
+.chunk-heading {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  color: rgba(127, 127, 127, 0.95);
+  margin-bottom: 0.3rem;
+  padding-left: 0.3rem;
+  border-left: 3px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.chunk-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  align-items: stretch;
+}
+
+.chunk-pair pre.src {
+  margin: 0;
+  padding: 0.7rem;
+  background: rgba(127, 127, 127, 0.06);
+  border-radius: 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  max-height: 60vh;
+  line-height: 1.45;
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.chunk-pair textarea.dst {
+  margin: 0;
+  padding: 0.7rem;
+  border-radius: 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 7em;
+  line-height: 1.5;
+}
+
+/* active chunk hilite */
+.chunk.active .chunk-heading {
+  border-left-color: var(--pico-primary, #1095c1);
+}
+.chunk.active .chunk-pair pre.src {
+  border-color: var(--pico-primary, #1095c1);
+  background: rgba(16, 149, 193, 0.07);
+}
+
+/* level depth indent */
+.chunk[data-level="3"] .chunk-heading { padding-left: 1.5rem; }
+.chunk[data-level="4"] .chunk-heading { padding-left: 2.5rem; }
+.chunk[data-level="5"] .chunk-heading { padding-left: 3.5rem; }
+.chunk[data-level="6"] .chunk-heading { padding-left: 4.5rem; }
+
+/* footer save status */
+.translate-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.4rem 1.2rem;
+  background: var(--pico-background-color, #fff);
+  border-top: 1px solid rgba(127, 127, 127, 0.2);
+  font-size: 0.85rem;
+}
+
+#save-status.saving { color: rgba(220, 150, 50, 0.95); }
+#save-status.saved { color: rgba(80, 180, 100, 0.95); }
+#save-status.error { color: rgba(220, 80, 80, 0.95); }

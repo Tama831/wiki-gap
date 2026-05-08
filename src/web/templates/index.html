@@ -11,7 +11,10 @@
   <main class="container">
     <header>
       <h1>wiki-gap <span class="muted">— 日英ギャップ検出</span></h1>
-      <p class="muted">total: {{ total }} articles · sorted by <strong>{{ sort }}</strong> ({{ direction }}) · category: <strong>{{ category or "all" }}</strong></p>
+      <p class="muted">
+        total: {{ total }} articles · sorted by <strong>{{ sort }}</strong> ({{ direction }}) · category: <strong>{{ category or "all" }}</strong>
+        · <a href="/translations">📝 翻訳プロジェクト一覧</a>
+      </p>
     </header>
 
     <form method="get" action="/" class="filters">
@@ -59,6 +62,7 @@
           <th class="num">ja pv 90d</th>
           <th class="num">gap</th>
           <th>updated</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -78,6 +82,7 @@
           <td class="num">{{ "{:,}".format(r.ja_pv_90d) if r.ja_pv_90d else "—" }}</td>
           <td class="num gap">{{ "%.2f"|format(r.gap_score) if r.gap_score else "—" }}</td>
           <td class="muted">{{ r.updated_at[:10] if r.updated_at else "—" }}</td>
+          <td><a href="/translate/{{ r.qid }}" role="button" class="outline translate-btn">翻訳</a></td>
         </tr>
         {% endfor %}
       </tbody>

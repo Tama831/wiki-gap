@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ article.en_title if article else qid }} の翻訳 — wiki-gap</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <link rel="stylesheet" href="/static/app.css" />
+  <link rel="stylesheet" href="/static/translate.css" />
+</head>
+<body>
+  <main class="translate-main">
+    <header class="translate-header">
+      <div class="translate-title">
+        <h2>
+          {% if article and article.en_url %}
+            <a href="{{ article.en_url }}" target="_blank" rel="noopener">{{ article.en_title }}</a>
+          {% else %}
+            {{ qid }}
+          {% endif %}
+          <span class="muted">→</span>
+          <span class="ja-title-display"
+                data-qid="{{ qid }}">{{ translation.ja_title_proposed if translation and translation.ja_title_proposed else "(未設定)" }}</span>
+          <button class="link-button" id="edit-ja-title" type="button">[ja タイトル変更]</button>
+        </h2>
+        <p class="muted">
+          QID: <a href="https://www.wikidata.org/wiki/{{ qid }}" target="_blank">{{ qid }}</a>
+          {% if translation %}
+            · revision: {{ translation.source_revision_id }}
+            · status: <span class="status-badge status-{{ translation.status }}">{{ translation.status }}</span>
+            · updated: {{ translation.updated_at[:19] }}
+            · {{ translation.chunks|length }} chunks
+          {% endif %}
+        </p>
+      </div>
+      <div class="translate-actions">
+        <a href="/" class="secondary outline" role="button">← ダッシュボード</a>
+        {% if translation %}
+          <a href="/translate/{{ qid }}/export?mode=skeleton" role="button" class="outline">📥 wikitext 書出 (skeleton)</a>
+          <a href="/translate/{{ qid }}/export?mode=compact" role="button" class="outline">📥 wikitext 書出 (compact)</a>
+          <button id="refetch-en" class="outline" type="button">en再取得</button>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if not translation %}
+      <section class="init-card">
+        <h3>翻訳プロジェクトを開始しますか？</h3>
+        <p>en Wikipedia から「{{ article.en_title if article else 'この記事' }}」の wikitext を取得し、
+           heading 単位で chunks に分割して保存します。</p>
+        <form id="init-form">
+          <label>ja タイトル候補
+            <input type="text" name="ja_title_proposed" placeholder="例: N-of-1試験" />
+          </label>
+          <label>en タイトル
+            <input type="text" name="en_title"
+                   value="{{ article.en_title if article else '' }}"
+                   placeholder="N-of-1 trial" required />
+          </label>
+          <button type="submit">📥 en を取得して開始</button>
+        </form>
+      </section>
+    {% else %}
+      <section class="split">
+        <div class="split-headers">
+          <h3>EN (read-only)</h3>
+          <h3>JA (編集してください)</h3>
+        </div>
+        <ol class="chunks-list" id="chunks">
+          {% for ch in translation.chunks %}
+          <li class="chunk" data-chunk-id="{{ ch.id }}" data-level="{{ ch.level }}">
+            <div class="chunk-heading">
+              {% if ch.level == 0 %}
+                <span class="muted">(intro)</span>
+              {% else %}
+                {{ "=" * ch.level }} <strong>{{ ch.heading }}</strong> {{ "=" * ch.level }}
+              {% endif %}
+            </div>
+            <div class="chunk-pair">
+              <pre class="src">{{ ch.src }}</pre>
+              <textarea class="dst"
+                        data-chunk-id="{{ ch.id }}"
+                        placeholder="ここに訳文 (wikitext) を書く"
+                        spellcheck="false">{{ ch.dst }}</textarea>
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+    {% endif %}
+
+    <footer class="translate-footer">
+      <span id="save-status" class="muted">📝 編集して focus を外すと自動保存します</span>
+    </footer>
+  </main>
+
+  <script>
+    window.WIKI_GAP_QID = "{{ qid }}";
+    window.WIKI_GAP_HAS_TRANSLATION = {{ "true" if translation else "false" }};
+  </script>
+  <script src="/static/translate.js" defer></script>
+</body>
+</html>

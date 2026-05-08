@@ -52,3 +52,24 @@ CREATE TABLE IF NOT EXISTS crawl_runs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_crawl_started ON crawl_runs(started_at DESC);
+
+-- ─────────────────────────────────────────────────────────────────
+-- Phase 2A: 翻訳エディタ
+-- ─────────────────────────────────────────────────────────────────
+
+-- 1 翻訳プロジェクト = 1 行 (qid 単位)
+CREATE TABLE IF NOT EXISTS translations (
+  qid TEXT PRIMARY KEY,
+  en_title TEXT NOT NULL,
+  ja_title_proposed TEXT,            -- 提案される ja タイトル (例: "N-of-1試験")
+  source_revision_id INTEGER,         -- en wikitext を取得した時点の revid
+  source_wikitext TEXT NOT NULL,      -- 取得時の en wikitext snapshot
+  chunks_json TEXT NOT NULL,          -- [{id, level, heading, src, dst}] JSON
+  status TEXT NOT NULL DEFAULT 'draft',  -- 'draft' | 'review' | 'submitted'
+  created_at TEXT NOT NULL,           -- ISO8601
+  updated_at TEXT NOT NULL            -- ISO8601, chunk 更新ごとに更新
+);
+
+CREATE INDEX IF NOT EXISTS idx_translations_updated ON translations(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_translations_status ON translations(status);
+

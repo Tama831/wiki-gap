@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>翻訳プロジェクト — wiki-gap</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>翻訳プロジェクト一覧</h1>
+      <p class="muted"><a href="/">← ダッシュボード</a></p>
+    </header>
+
+    {% if items %}
+      <table class="striped">
+        <thead>
+          <tr>
+            <th>QID</th>
+            <th>en title</th>
+            <th>ja title (案)</th>
+            <th>status</th>
+            <th>updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in items %}
+          <tr>
+            <td>{{ it.qid }}</td>
+            <td>{{ it.en_title }}</td>
+            <td>{{ it.ja_title_proposed or "—" }}</td>
+            <td>{{ it.status }}</td>
+            <td class="muted">{{ it.updated_at[:19] }}</td>
+            <td><a href="/translate/{{ it.qid }}" role="button">開く</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>まだ翻訳プロジェクトはありません。ダッシュボードから記事を選んで「翻訳する」ボタンを押してください。</p>
+    {% endif %}
+  </main>
+</body>
+</html>
