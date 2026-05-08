@@ -77,6 +77,26 @@ main.translate-main {
 }
 .split-headers h3 { margin: 0; font-size: 1rem; }
 
+/* section grouping */
+.section-group {
+  margin: 1.2rem 0;
+  padding: 0;
+  border: 1px solid rgba(127, 127, 127, 0.18);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+.section-banner {
+  padding: 0.6rem 1rem;
+  background: rgba(127, 127, 127, 0.08);
+  border-bottom: 1px solid rgba(127, 127, 127, 0.18);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92rem;
+}
+.section-banner strong { font-size: 1rem; }
+.section-banner .section-mark { color: rgba(127, 127, 127, 0.6); }
+.section-level-2 { font-size: 1rem; }
+.section-level-3 .section-banner strong { font-size: 0.95rem; }
+
 .chunks-list {
   list-style: none;
   padding: 0;
@@ -84,9 +104,12 @@ main.translate-main {
 }
 .chunk {
   margin: 0;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid rgba(127, 127, 127, 0.1);
+  padding: 0.5rem 0.8rem;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.08);
 }
+.chunk:last-child { border-bottom: none; }
+.chunk.type-heading { background: rgba(127, 127, 127, 0.04); }
+.chunk.type-block .src { background: rgba(120, 80, 200, 0.05); }
 .chunk-heading {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85rem;
@@ -127,9 +150,12 @@ main.translate-main {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.9rem;
   resize: vertical;
-  min-height: 7em;
+  min-height: 5em;
   line-height: 1.5;
 }
+/* heading chunk は短いので textarea を 1 行ぶんに */
+.chunk.type-heading .chunk-pair textarea.dst { min-height: 2.4em; }
+.chunk.type-heading .chunk-pair pre.src { max-height: 4em; }
 
 /* active chunk hilite (大幅強化) */
 .chunk.active {

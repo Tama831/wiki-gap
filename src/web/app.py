@@ -188,6 +188,24 @@ def translate_page(request: Request, qid: str):
     with connect(read_only=True) as conn:
         translation = translations_service.get_translation(conn, qid)
 
+    sections: list[dict] = []
+    if translation:
+        # chunks を section_id で連続的にグループ化
+        current: dict | None = None
+        for ch in translation.get("chunks") or []:
+            sid = ch.get("section_id", 0)
+            sheading = ch.get("section_heading") or ch.get("heading") or "(intro)"
+            slevel = ch.get("section_level", ch.get("level", 0))
+            if current is None or current["section_id"] != sid:
+                current = {
+                    "section_id": sid,
+                    "section_heading": sheading,
+                    "section_level": slevel,
+                    "chunks": [],
+                }
+                sections.append(current)
+            current["chunks"].append(ch)
+
     return templates.TemplateResponse(
         request,
         "translate.html",
@@ -195,6 +213,7 @@ def translate_page(request: Request, qid: str):
             "qid": qid,
             "article": article,
             "translation": translation,
+            "sections": sections,
         },
     )
 

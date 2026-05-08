@@ -61,32 +61,41 @@
         </form>
       </section>
     {% else %}
-      <section class="split">
-        <div class="split-headers">
-          <h3>EN (read-only)</h3>
-          <h3>JA (編集してください)</h3>
-        </div>
-        <ol class="chunks-list" id="chunks">
-          {% for ch in translation.chunks %}
-          <li class="chunk" data-chunk-id="{{ ch.id }}" data-level="{{ ch.level }}">
-            <div class="chunk-heading">
-              {% if ch.level == 0 %}
-                <span class="muted">(intro)</span>
-              {% else %}
-                {{ "=" * ch.level }} <strong>{{ ch.heading }}</strong> {{ "=" * ch.level }}
-              {% endif %}
-            </div>
-            <div class="chunk-pair">
-              <pre class="src">{{ ch.src }}</pre>
-              <textarea class="dst"
-                        data-chunk-id="{{ ch.id }}"
-                        placeholder="ここに訳文 (wikitext) を書く"
-                        spellcheck="false">{{ ch.dst }}</textarea>
-            </div>
-          </li>
-          {% endfor %}
-        </ol>
-      </section>
+      <div class="split-headers">
+        <h3>EN (read-only)</h3>
+        <h3>JA (編集してください — 段落ごとに textarea)</h3>
+      </div>
+      <div id="sections-root">
+        {% for sec in sections %}
+        <section class="section-group" data-section-id="{{ sec.section_id }}">
+          <div class="section-banner section-level-{{ sec.section_level }}">
+            {% if sec.section_level == 0 %}
+              <span class="muted">▼ 概要 (intro)</span>
+            {% else %}
+              <span class="section-mark">{{ "=" * sec.section_level }}</span>
+              <strong>{{ sec.section_heading }}</strong>
+              <span class="section-mark">{{ "=" * sec.section_level }}</span>
+            {% endif %}
+          </div>
+          <ol class="chunks-list">
+            {% for ch in sec.chunks %}
+            <li class="chunk type-{{ ch.type|default('para') }}"
+                data-chunk-id="{{ ch.id }}"
+                data-section-id="{{ sec.section_id }}"
+                data-type="{{ ch.type|default('para') }}">
+              <div class="chunk-pair">
+                <pre class="src">{{ ch.src }}</pre>
+                <textarea class="dst"
+                          data-chunk-id="{{ ch.id }}"
+                          placeholder="{% if ch.type == 'heading' %}見出し{% elif ch.type == 'block' %}この塊{% else %}この段落{% endif %}の訳文"
+                          spellcheck="false">{{ ch.dst }}</textarea>
+              </div>
+            </li>
+            {% endfor %}
+          </ol>
+        </section>
+        {% endfor %}
+      </div>
     {% endif %}
 
     <footer class="translate-footer">

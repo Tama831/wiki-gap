@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-from src.translations.wikitext import Chunk, parse_sections
+from src.translations.wikitext import Chunk, parse_paragraphs
 
 
 def now_iso() -> str:
@@ -97,16 +97,16 @@ def init_translation(
         return existing
 
     wikitext, revid = fetch_en_wikitext(en_title)
-    new_chunks = parse_sections(wikitext)
+    new_chunks = parse_paragraphs(wikitext)
 
     if existing:
-        # src を更新するが dst は heading 単位で merge
-        # (見出しが一致する旧 chunk の dst を引き継ぐ)
+        # src を更新するが dst は src 一致で merge (段落単位)
         old_chunks = existing.get("chunks", [])
-        old_by_heading = {c.get("heading", ""): c.get("dst", "") for c in old_chunks}
+        old_by_src = {(c.get("src") or "").strip(): c.get("dst", "") for c in old_chunks}
         for nc in new_chunks:
-            if nc.heading in old_by_heading:
-                nc.dst = old_by_heading[nc.heading]
+            key = nc.src.strip()
+            if key in old_by_src and old_by_src[key]:
+                nc.dst = old_by_src[key]
 
     chunks_json = json.dumps([c.to_dict() for c in new_chunks], ensure_ascii=False)
     now = now_iso()
