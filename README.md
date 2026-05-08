@@ -138,6 +138,10 @@ journalctl -u wiki-gap-crawl.service -n 50
 ## ロードマップ
 
 - **Phase 1** (now): ダッシュボード = ギャップ検出のみ
+- **Phase 1.1**: partial coverage フラグ (親記事でカバー済の偽完全ギャップ対応)
+  - 例: α-thalassemia は en 独立記事、ja は「サラセミア」記事の 1 セクション
+  - 解決: ダッシュボードからユーザーが `coverage_status='partial:サラセミア'` をフラグ立てる UI
+  - articles テーブルに `coverage_status` / `coverage_note` 追加、gap_score にペナルティ
 - **Phase 2A**: N-of-1 trial 専用の翻訳エディタ (左右 split + 章同期、ローカル保存)
 - **Phase 2B**: Wikipedia API 連携 (下書き空間に保存 → プレビュー → 投稿)
 - **Phase 2C**: 他記事への展開 (ダッシュボードから「翻訳する」ボタン)
