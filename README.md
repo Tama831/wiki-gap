@@ -35,8 +35,9 @@ python scripts/run_crawl.py --category disease --limit 1000   # 段階1
 python scripts/run_crawl.py --category disease --limit 0      # 段階2 (無制限)
 python scripts/run_crawl.py --all --limit 0                   # 段階3 (全カテゴリ)
 
-# ダッシュボード起動 (127.0.0.1 限定 = Tailscale 経由のみ)
-uvicorn src.web.app:app --host 127.0.0.1 --port 8766
+# ダッシュボード起動 (Tailscale IP 限定 bind = public IP には漏らさない)
+# Hetzner の Tailscale IP は `tailscale ip -4` で確認 (例: 100.104.67.25)
+uvicorn src.web.app:app --host 100.104.67.25 --port 8766
 ```
 
 > **Note**: 後日 [uv](https://docs.astral.sh/uv/) への移行も `pyproject.toml` を維持しているのでそのまま `uv sync` で動きます。
@@ -107,13 +108,10 @@ journalctl -u wiki-gap-crawl.service -n 50
 ```
 
 ### Tailscale 経由でダッシュボードにアクセス
-- ダッシュボードは `127.0.0.1:8766` バインド (外部公開しない)
-- Mac から見るには Tailscale で Hetzner ノードに繋がっていることを確認 → `http://<hetzner-tailnet-ip>:8766` ... ただし loopback 限定のままだと Tailscale IP では見れない
-- **見える形にするには 2 つの選択肢**:
-  - (a) SSH トンネル: `ssh -L 8766:127.0.0.1:8766 hetzner` → Mac で `http://localhost:8766`
-  - (b) Tailscale IP に bind: `--host 100.x.x.x` (Tailscale の Hetzner ノード IP) → public IP には出ない
-
-(b) のほうが手間が少ないですが、Tailscale ACL で他デバイスから見えるか要確認。
+- ダッシュボードは Tailscale IP (`100.104.67.25:8766`) に bind (public IP には漏らさない)
+- Tailnet 内のデバイス (Mac / iPhone / iPad など) からは `http://100.104.67.25:8766` で見れる
+- 他人 (Tailnet 外) からは IP もポートも見えない
+- Hetzner ノードの Tailscale IP は `tailscale ip -4` で確認
 
 ## トラブルシュート
 

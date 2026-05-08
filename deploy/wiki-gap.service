@@ -10,8 +10,8 @@ Group=tama
 WorkingDirectory=/home/tama/wiki-gap
 Environment="PYTHONPATH=/home/tama/wiki-gap"
 EnvironmentFile=/home/tama/wiki-gap/.env
-# 127.0.0.1 限定: Tailscale 経由 / SSH トンネル経由でのみアクセス可能
-ExecStart=/home/tama/wiki-gap/.venv/bin/uvicorn src.web.app:app --host 127.0.0.1 --port 8766
+# Tailscale IP 限定 bind: public IP には漏らさない、Tailnet 内 (Mac/iPhone等) からは見れる
+ExecStart=/home/tama/wiki-gap/.venv/bin/uvicorn src.web.app:app --host ${WIKI_GAP_BIND_HOST} --port ${WIKI_GAP_BIND_PORT}
 Restart=on-failure
 RestartSec=10s
 
