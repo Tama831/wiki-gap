@@ -438,16 +438,15 @@ def wiki_oauth_callback(
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"token exchange failed: {exc}")
 
-    # username を取得して保存
+    # username を取得して保存 (meta.wikimedia.org = SUL ホーム、常にアカウント存在)
     username = None
     user_id_int = None
     try:
-        with WikiClient(tokens.access_token, lang="ja") as wc:
+        with WikiClient(tokens.access_token, lang="meta") as wc:
             ui = wc.userinfo()
             username = ui.name
             user_id_int = ui.user_id
     except Exception:
-        # userinfo 取得失敗しても token は保存する
         pass
 
     with connect() as conn:
@@ -468,18 +467,29 @@ def wiki_logout():
 
 
 @app.get("/wiki/userinfo")
-def wiki_userinfo():
-    """現在のログイン状態を返す。"""
+def wiki_userinfo(refresh: bool = Query(False)):
+    """現在のログイン状態を返す。refresh=true なら meta.wikimedia.org に再問い合わせ。"""
     with connect() as conn:
         auth = wiki_auth_service.get_auth(conn)
-    if not auth:
-        return {"logged_in": False}
+        if not auth:
+            return {"logged_in": False}
+        # username が未取得 or refresh 要求なら meta から取り直す
+        if refresh or not auth.get("username"):
+            access_token = wiki_auth_service.get_valid_access_token(conn)
+            if access_token:
+                try:
+                    with WikiClient(access_token, lang="meta") as wc:
+                        ui = wc.userinfo()
+                        wiki_auth_service.update_username(conn, ui.name, ui.user_id)
+                        auth = wiki_auth_service.get_auth(conn)
+                except Exception:
+                    pass
     return {
         "logged_in": True,
-        "username": auth.get("username"),
-        "user_id": auth.get("user_id"),
-        "scopes": auth.get("scopes"),
-        "token_expires_at": auth.get("token_expires_at"),
+        "username": (auth or {}).get("username"),
+        "user_id": (auth or {}).get("user_id"),
+        "scopes": (auth or {}).get("scopes"),
+        "token_expires_at": (auth or {}).get("token_expires_at"),
     }
 
 

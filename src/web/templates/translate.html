@@ -122,11 +122,8 @@
           </select>
         </label>
         <label>名前空間
-          <select id="publish-namespace">
-            <option value="下書き" selected>下書き: (Draft 名前空間 — 推奨)</option>
-            <option value="利用者">利用者:&lt;ユーザ名&gt;/ (個人サンドボックス)</option>
-            <option value="">(本記事空間 — 注意)</option>
-          </select>
+          <!-- 中身は publish.js で言語に応じて動的に組み立てる -->
+          <select id="publish-namespace"></select>
         </label>
         <label>ページタイトル
           <input type="text" id="publish-title" placeholder="(空なら ja タイトル候補を使用)" />

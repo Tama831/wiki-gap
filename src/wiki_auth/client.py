@@ -20,6 +20,12 @@ def _user_agent() -> str:
 
 
 def api_url(lang: str = "ja") -> str:
+    """
+    'meta' なら meta.wikimedia.org (SUL ホーム、常にアカウント存在)、
+    それ以外なら <lang>.wikipedia.org。
+    """
+    if lang == "meta":
+        return "https://meta.wikimedia.org/w/api.php"
     return f"https://{lang}.wikipedia.org/w/api.php"
 
 

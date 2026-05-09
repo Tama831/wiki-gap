@@ -21,10 +21,13 @@
   let isLoggedIn = false;
   let currentUser = null;
 
-  // 初期ロード: ログイン状態を取得
+  // 初期ロード: ログイン状態を取得 (初回は refresh=true で username を確実に取得)
+  let _authRefreshed = false;
   async function refreshAuthStatus() {
     try {
-      const res = await fetch("/wiki/userinfo");
+      const url = _authRefreshed ? "/wiki/userinfo" : "/wiki/userinfo?refresh=true";
+      _authRefreshed = true;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.logged_in) {
         isLoggedIn = true;
@@ -53,11 +56,27 @@
   }
   refreshAuthStatus();
 
+  // ja は Draft 名前空間が無いので、利用者:<username>/<title> がデフォルト。
+  // en は Draft 名前空間が標準。
+  function rebuildNamespaceOptions() {
+    const lang = langSel.value;
+    nsSel.innerHTML = "";
+    if (lang === "ja") {
+      nsSel.add(new Option("利用者:<ユーザ名>/<タイトル> (個人サブページ — 推奨)", "利用者", true, true));
+      nsSel.add(new Option("Wikipedia:サンドボックス (共用、上書きされやすい)", "Wikipedia"));
+      nsSel.add(new Option("(本記事空間 — 慎重に)", ""));
+    } else {
+      nsSel.add(new Option("Draft:<タイトル> (Draft 名前空間 — 推奨)", "Draft", true, true));
+      nsSel.add(new Option("User:<ユーザ名>/<タイトル> (個人サブページ)", "User"));
+      nsSel.add(new Option("(本記事空間 — 慎重に)", ""));
+    }
+  }
+
   function updateTargetDisplay() {
     const lang = langSel.value;
     const ns = nsSel.value;
-    let title = (titleInput.value || jaTitle || enTitle || "(タイトル未設定)").trim();
-    if (ns === "利用者") {
+    let title = (titleInput.value || (lang === "ja" ? jaTitle : enTitle) || "(タイトル未設定)").trim();
+    if (ns === "利用者" || ns === "User") {
       title = `${currentUser || "<ユーザ名>"}/${title}`;
     }
     const fullTitle = ns ? `${ns}:${title}` : title;
@@ -74,6 +93,7 @@
     }
     titleInput.value = "";
     summaryInput.value = "";
+    rebuildNamespaceOptions();
     updateTargetDisplay();
     modal.classList.remove("hidden");
   }
@@ -85,7 +105,10 @@
   if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
   modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 
-  langSel.addEventListener("change", updateTargetDisplay);
+  langSel.addEventListener("change", () => {
+    rebuildNamespaceOptions();
+    updateTargetDisplay();
+  });
   nsSel.addEventListener("change", updateTargetDisplay);
   titleInput.addEventListener("input", updateTargetDisplay);
 
@@ -98,13 +121,13 @@
         summary: (summaryInput.value || "").trim() || null,
         confirm: true,
       };
-      // 利用者名前空間の特別ハンドリング
-      if (body.namespace === "利用者") {
+      // 利用者 / User 名前空間の特別ハンドリング: ユーザ名を prefix に組み込む
+      if (body.namespace === "利用者" || body.namespace === "User") {
         if (!currentUser) {
           alert("ログインユーザ名が取得できていません。再ログインしてください。");
           return;
         }
-        const t = body.title || jaTitle || enTitle;
+        const t = body.title || (langSel.value === "ja" ? jaTitle : enTitle);
         body.title = `${currentUser}/${t}`;
       }
       confirmBtn.disabled = true;
