@@ -1,0 +1,206 @@
+/* Wikipedia-likeなプレビュースタイル (最低限) */
+
+:root {
+  --wp-text: #202122;
+  --wp-link: #0645ad;
+  --wp-link-visited: #0b0080;
+  --wp-redlink: #ba0000;
+  --wp-border: #a2a9b1;
+  --wp-bg-soft: #eaecf0;
+  --wp-bg-table: #f8f9fa;
+}
+
+body {
+  font-family: 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--wp-text);
+  margin: 0;
+  background: #fff;
+}
+
+header.preview-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1.2rem;
+  background: #f6f6f6;
+  border-bottom: 1px solid var(--wp-border);
+  font-size: 0.88rem;
+}
+.preview-bar a.back-link {
+  color: #0645ad;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+.preview-bar .preview-label {
+  background: #fff8c5;
+  border: 1px solid #d4a72c;
+  border-radius: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+}
+.preview-title { color: #222; font-size: 1rem; }
+.preview-meta { display: flex; gap: 0.7rem; align-items: center; }
+.lang-toggle { color: #555; text-decoration: none; }
+.lang-toggle:hover { text-decoration: underline; }
+.muted { color: #777; }
+
+main.preview-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 4rem;
+}
+
+.page-header { border-bottom: 3px double #aaa; margin-bottom: 1rem; }
+.page-header h1.firstHeading {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: normal;
+  font-size: 1.95rem;
+  margin: 0 0 0.4rem 0;
+}
+.page-subtitle { font-size: 0.85rem; margin: 0 0 0.5rem; }
+
+/* MediaWiki output styles */
+.mw-parser-output {
+  font-family: inherit;
+}
+.mw-parser-output a {
+  color: var(--wp-link);
+  text-decoration: none;
+}
+.mw-parser-output a:hover { text-decoration: underline; }
+.mw-parser-output a:visited { color: var(--wp-link-visited); }
+.mw-parser-output a.new,
+.mw-parser-output a.mw-redirect.new {
+  color: var(--wp-redlink);
+}
+.mw-parser-output a.external::after {
+  content: " ↗";
+  font-size: 0.7em;
+  color: #777;
+}
+
+.mw-parser-output h2 {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: normal;
+  font-size: 1.55rem;
+  border-bottom: 1px solid var(--wp-border);
+  padding-bottom: 0.15rem;
+  margin: 1.6rem 0 0.5rem;
+}
+.mw-parser-output h3 {
+  font-size: 1.25rem;
+  margin: 1.2rem 0 0.4rem;
+}
+.mw-parser-output h4 { font-size: 1.1rem; }
+
+.mw-parser-output p { margin: 0.6rem 0; }
+.mw-parser-output ul, .mw-parser-output ol { margin: 0.6rem 0 0.6rem 1.6rem; }
+.mw-parser-output li { margin: 0.2rem 0; }
+
+/* Tables */
+.mw-parser-output table.wikitable,
+.mw-parser-output .wikitable {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: var(--wp-bg-table);
+}
+.mw-parser-output table.wikitable th,
+.mw-parser-output table.wikitable td {
+  border: 1px solid var(--wp-border);
+  padding: 0.4rem 0.65rem;
+}
+.mw-parser-output table.wikitable th {
+  background: var(--wp-bg-soft);
+  text-align: center;
+  font-weight: bold;
+}
+
+/* References */
+.mw-parser-output sup.reference,
+.mw-parser-output .reference {
+  font-size: 0.78em;
+}
+.mw-parser-output ol.references {
+  font-size: 0.92em;
+  margin-top: 0.7rem;
+}
+.mw-parser-output ol.references li {
+  margin: 0.3rem 0;
+}
+.mw-parser-output .reference-text { color: #333; }
+
+/* Citation templates */
+.mw-parser-output cite {
+  font-style: normal;
+}
+
+/* Hatnote / dablinks */
+.mw-parser-output .hatnote,
+.mw-parser-output .dablink {
+  font-style: italic;
+  color: #54595d;
+  padding-left: 1em;
+  font-size: 0.92em;
+}
+
+/* Infobox basic */
+.mw-parser-output .infobox {
+  float: right;
+  clear: right;
+  margin: 0.5em 0 1em 1em;
+  padding: 0.3em;
+  background: var(--wp-bg-table);
+  border: 1px solid var(--wp-border);
+  font-size: 0.88em;
+  width: 22em;
+  line-height: 1.4;
+}
+
+/* Image / file */
+.mw-parser-output figure { margin: 1em auto; text-align: center; }
+.mw-parser-output figcaption {
+  font-size: 0.85em;
+  color: #555;
+  text-align: left;
+  margin-top: 0.3em;
+  padding: 0 0.5em;
+}
+
+/* Error placeholders for missing files */
+.mw-parser-output .mw-file-element.mw-broken-media,
+.mw-parser-output .mw-file-element[data-broken] {
+  color: var(--wp-redlink);
+  font-style: italic;
+}
+
+footer.preview-footer {
+  border-top: 1px solid var(--wp-border);
+  padding: 1rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* Edit section links — hide in preview */
+.mw-parser-output .mw-editsection,
+.mw-parser-output .mw-editsection-bracket,
+.mw-parser-output .mw-editsection-divider {
+  display: none;
+}
+
+/* Toc */
+.mw-parser-output .toc {
+  background: var(--wp-bg-table);
+  border: 1px solid var(--wp-border);
+  padding: 0.5rem 0.8rem;
+  margin: 1rem 0;
+  font-size: 0.92em;
+  display: inline-block;
+}
+.mw-parser-output .toc ul { list-style: none; margin: 0; padding-left: 1em; }
+.mw-parser-output .toctitle { font-weight: bold; margin-bottom: 0.3em; }

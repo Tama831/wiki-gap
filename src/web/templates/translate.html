@@ -36,8 +36,9 @@
       <div class="translate-actions">
         <a href="/" class="secondary outline" role="button">← ダッシュボード</a>
         {% if translation %}
-          <a href="/translate/{{ qid }}/export?mode=skeleton" role="button" class="outline">📥 wikitext 書出 (skeleton)</a>
-          <a href="/translate/{{ qid }}/export?mode=compact" role="button" class="outline">📥 wikitext 書出 (compact)</a>
+          <a href="/translate/{{ qid }}/preview" target="_blank" role="button" class="outline">👁 プレビュー</a>
+          <a href="/translate/{{ qid }}/export?mode=skeleton" role="button" class="outline">📥 skeleton</a>
+          <a href="/translate/{{ qid }}/export?mode=compact" role="button" class="outline">📥 compact</a>
           <button id="refetch-en" class="outline" type="button">en再取得</button>
         {% endif %}
       </div>

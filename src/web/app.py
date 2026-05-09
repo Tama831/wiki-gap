@@ -287,6 +287,65 @@ def translate_update_meta(qid: str, body: MetaUpdate):
     return {"ok": True}
 
 
+def _wiki_user_agent() -> str:
+    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/PLACEHOLDER/wiki-gap")
+    return f"WikiGapDetector/0.1 ({contact})"
+
+
+@app.get("/translate/{qid}/preview", response_class=HTMLResponse)
+def translate_preview(request: Request, qid: str, lang: str = Query("ja")):
+    """
+    現在の dst を 1 つの wikitext に結合し、MediaWiki Parse API で
+    HTML レンダリングしてプレビュー表示する (Wikipedia そっくり表示)。
+    """
+    if lang not in {"ja", "en"}:
+        raise HTTPException(status_code=400, detail="lang must be ja|en")
+
+    with connect(read_only=True) as conn:
+        try:
+            wt = translations_service.export_wikitext(conn, qid, mode="compact")
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
+        translation = translations_service.get_translation(conn, qid)
+
+    import httpx as _httpx
+    url = f"https://{lang}.wikipedia.org/w/api.php"
+    params = {
+        "action": "parse",
+        "text": wt,
+        "contentmodel": "wikitext",
+        "prop": "text",
+        "disablelimitreport": "1",
+        "format": "json",
+        "maxlag": "30",
+    }
+    headers = {"User-Agent": _wiki_user_agent()}
+    try:
+        with _httpx.Client(timeout=30.0, headers=headers) as client:
+            response = client.post(url, data=params)
+            response.raise_for_status()
+            payload = response.json()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Parse API error: {exc}")
+
+    if "error" in payload:
+        raise HTTPException(status_code=502, detail=f"MediaWiki: {payload['error']}")
+
+    parsed = payload.get("parse") or {}
+    rendered_html = (parsed.get("text") or {}).get("*", "")
+
+    return templates.TemplateResponse(
+        request,
+        "preview.html",
+        {
+            "qid": qid,
+            "title": (translation or {}).get("ja_title_proposed") or qid,
+            "html": rendered_html,
+            "lang": lang,
+        },
+    )
+
+
 @app.get("/translate/{qid}/export")
 def translate_export(qid: str, mode: str = Query("skeleton")):
     """訳文を 1 つの wikitext として出力 (download)。"""

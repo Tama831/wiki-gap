@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }} — wiki-gap プレビュー</title>
+  <link rel="stylesheet" href="/static/preview.css" />
+</head>
+<body>
+  <header class="preview-bar">
+    <div>
+      <a href="/translate/{{ qid }}" class="back-link">← 編集に戻る</a>
+      <span class="preview-label">プレビュー</span>
+      <strong class="preview-title">{{ title }}</strong>
+    </div>
+    <div class="preview-meta">
+      <span class="muted">{{ lang }}.wikipedia.org でレンダリング</span>
+      <a href="/translate/{{ qid }}/preview?lang={% if lang == 'ja' %}en{% else %}ja{% endif %}"
+         class="muted lang-toggle">[{% if lang == 'ja' %}en{% else %}ja{% endif %} で再描画]</a>
+    </div>
+  </header>
+
+  <main class="preview-content">
+    <div class="page-header">
+      <h1 class="firstHeading">{{ title }}</h1>
+      <p class="page-subtitle muted">出典: ウィキペディア (下書き)</p>
+    </div>
+    <div class="mw-parser-output">
+      {{ html | safe }}
+    </div>
+  </main>
+
+  <footer class="preview-footer muted">
+    <small>
+      このプレビューは {{ lang }}.wikipedia.org の Parse API を使ってレンダリングしています。
+      赤いリンクは ja Wikipedia に該当記事がない用語です。
+    </small>
+  </footer>
+</body>
+</html>
