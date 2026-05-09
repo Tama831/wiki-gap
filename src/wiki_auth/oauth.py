@@ -30,6 +30,14 @@ AUTHORIZE_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/authorize"
 TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
 
 
+def _user_agent() -> str:
+    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/PLACEHOLDER/wiki-gap")
+    return f"WikiGapDetector/0.1 ({contact})"
+
+
+_HTTP_HEADERS = {"User-Agent": "WikiGapDetector/0.1 (https://github.com/PLACEHOLDER/wiki-gap)"}
+
+
 @dataclass
 class OAuthTokens:
     access_token: str
@@ -88,8 +96,9 @@ def exchange_code_for_token(code: str, *, timeout_seconds: float = 30.0) -> OAut
         "redirect_uri": callback_url(),
     }
     auth = (_client_id(), _client_secret())
+    headers = {"User-Agent": _user_agent()}
 
-    with httpx.Client(timeout=timeout_seconds) as client:
+    with httpx.Client(timeout=timeout_seconds, headers=headers) as client:
         response = client.post(TOKEN_URL, data=data, auth=auth)
         if response.status_code >= 400:
             raise RuntimeError(
@@ -118,8 +127,9 @@ def refresh_access_token(refresh_token: str, *, timeout_seconds: float = 30.0) -
         "refresh_token": refresh_token,
     }
     auth = (_client_id(), _client_secret())
+    headers = {"User-Agent": _user_agent()}
 
-    with httpx.Client(timeout=timeout_seconds) as client:
+    with httpx.Client(timeout=timeout_seconds, headers=headers) as client:
         response = client.post(TOKEN_URL, data=data, auth=auth)
         if response.status_code >= 400:
             raise RuntimeError(
