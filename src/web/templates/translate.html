@@ -157,6 +157,20 @@
             <div id="term-check-list"></div>
           </details>
         </div>
+        <div id="link-check-panel" class="term-panel">
+          <div class="term-panel-header">
+            <span>🔗 ja Wikipedia リンク存在確認 + 赤リンク → 英語版 interwiki 自動提案</span>
+            <span>
+              <button id="link-check-refresh" type="button" class="link-button">[再チェック]</button>
+              <button id="link-fix-apply" type="button" class="link-button" disabled>[赤リンクを :en: に置換]</button>
+            </span>
+          </div>
+          <div id="link-check-summary" class="term-panel-summary muted">読み込み中…</div>
+          <details id="link-check-details">
+            <summary>詳細を見る</summary>
+            <div id="link-check-list"></div>
+          </details>
+        </div>
         <p class="modal-info">
           📋 ボタンを押すと wikitext をクリップボードにコピー → 新タブで <code>action=edit</code> 画面を開きます。
           Cmd+V で貼付 → 「変更を公開」で投稿。

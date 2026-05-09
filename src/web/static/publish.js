@@ -138,6 +138,82 @@
   const refreshBtn = document.getElementById("term-check-refresh");
   if (refreshBtn) refreshBtn.addEventListener("click", runTermCheck);
 
+  // ── 🔗 リンクチェック (ja Wikipedia 存在確認 + en interwiki 提案) ──
+  async function runLinkCheck() {
+    const summaryEl = document.getElementById("link-check-summary");
+    const listEl = document.getElementById("link-check-list");
+    const fixBtn = document.getElementById("link-fix-apply");
+    if (!summaryEl || !listEl) return;
+    summaryEl.textContent = "読み込み中…";
+    summaryEl.className = "term-panel-summary muted";
+    listEl.innerHTML = "";
+    if (fixBtn) fixBtn.disabled = true;
+    try {
+      const res = await fetch(`/translate/${qid}/link_check`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const total = data.total_links || 0;
+      const ja_existing = data.ja_existing || 0;
+      const redlinks = data.redlinks || 0;
+      const fixable = data.fixable || 0;
+      let cls = "ok"; let icon = "✅";
+      if (redlinks > 0) { cls = "warn"; icon = "⚠"; }
+      summaryEl.className = `term-panel-summary ${cls}`;
+      summaryEl.textContent =
+        `${icon} 合計 ${total} 件 · ja に存在 ${ja_existing} · 赤リンク ${redlinks} ` +
+        (fixable > 0 ? ` · うち ${fixable} 件は :en: 置換で青リンク化可` : "") +
+        ((redlinks - fixable) > 0 ? ` · ${redlinks - fixable} 件は手動確認 (en にも該当なし)` : "");
+      if (fixBtn) fixBtn.disabled = fixable === 0;
+      const links = data.links || [];
+      links.sort((a, b) => (a.ja_exists - b.ja_exists) || a.chunk_id - b.chunk_id);
+      listEl.innerHTML = links.map(L => {
+        let icon, cls;
+        if (L.ja_exists) { icon = "✅"; cls = "ok"; }
+        else if (L.suggested) { icon = "🔄"; cls = "miss"; }
+        else { icon = "❌"; cls = "miss"; }
+        const sugg = L.suggested ? ` → <code>${escapeHtml(L.suggested)}</code>` :
+          (L.ja_exists ? "" : " (en にもなし、手動確認)");
+        return (
+          `<div class="term-hit-row ${cls}">` +
+          `<span class="icon">${icon}</span>` +
+          `<span class="src-term">[[${escapeHtml(L.target)}|${escapeHtml(L.display)}]]</span>` +
+          `<span class="ja-term">chunk ${L.chunk_id}</span>` +
+          `<span class="sources">${sugg}</span>` +
+          `</div>`
+        );
+      }).join("");
+    } catch (e) {
+      summaryEl.className = "term-panel-summary error";
+      summaryEl.textContent = `❌ チェック失敗: ${e.message}`;
+    }
+  }
+
+  const linkRefreshBtn = document.getElementById("link-check-refresh");
+  if (linkRefreshBtn) linkRefreshBtn.addEventListener("click", runLinkCheck);
+
+  const linkFixBtn = document.getElementById("link-fix-apply");
+  if (linkFixBtn) {
+    linkFixBtn.addEventListener("click", async () => {
+      if (!confirm("赤リンクを [[:en:Foo|表示]] 形式に一括置換しますか？\n\n対象: ja Wikipedia に記事がなく、en Wikipedia には該当記事がある赤リンクのみ。\nchunks_json が更新されます (取り消すには手動で chunk dst を直接編集)。")) {
+        return;
+      }
+      linkFixBtn.disabled = true;
+      linkFixBtn.textContent = "[置換中...]";
+      try {
+        const res = await fetch(`/translate/${qid}/link_fix`, { method: "POST" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        alert(`✅ ${data.n_changed} 件の赤リンクを :en: interwiki に置換しました。\n\nページをリロードして変更を確認してください。`);
+        location.reload();
+      } catch (e) {
+        alert(`❌ ${e.message}`);
+      } finally {
+        linkFixBtn.disabled = false;
+        linkFixBtn.textContent = "[赤リンクを :en: に置換]";
+      }
+    });
+  }
+
   function openModal() {
     if (!isLoggedIn) {
       if (confirm("Wikipedia にログインしていません。ログイン画面に進みますか？")) {
@@ -160,6 +236,7 @@
     if (tagChk) tagChk.checked = false;
     modal.classList.remove("hidden");
     runTermCheck();
+    runLinkCheck();
   }
   function closeModal() {
     modal.classList.add("hidden");

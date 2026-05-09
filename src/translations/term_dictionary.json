@@ -162,6 +162,12 @@
       "ja": "エビデンスに基づく医療",
       "sources": ["MeSH:D019317", "wiki-ja:エビデンスに基づく医療", "JAMS"],
       "aliases": ["EBM"]
+    },
+    "Seth Roberts": {
+      "ja": "セス・ロバーツ",
+      "ja_aliases": [],
+      "sources": ["en:Seth Roberts"],
+      "aliases": []
     }
   }
 }

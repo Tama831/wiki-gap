@@ -591,6 +591,45 @@ def translate_publish(qid: str, body: PublishRequest):
     }
 
 
+@app.get("/translate/{qid}/link_check")
+def translate_link_check(qid: str):
+    """
+    訳文中の `[[link]]` をすべて検出して、ja Wikipedia に該当記事があるか
+    確認する。なければ英語版への interwiki link 候補を提案する。
+    """
+    from src.translations.link_check import check_chunks
+    with connect(read_only=True) as conn:
+        translation = translations_service.get_translation(conn, qid)
+    if not translation:
+        raise HTTPException(status_code=404, detail=f"no translation for {qid}")
+    return check_chunks(translation.get("chunks") or [])
+
+
+@app.post("/translate/{qid}/link_fix")
+def translate_link_fix(qid: str):
+    """
+    赤リンクを `[[:en:Foo|display]]` 形式に一括書き換えて chunks_json を更新。
+    返り値: {n_changed, links} (修正された件数 + 結果)
+    """
+    from src.translations.link_check import apply_interwiki_fix
+    import json as _json
+    from datetime import UTC as _UTC, datetime as _dt
+    with connect() as conn:
+        translation = translations_service.get_translation(conn, qid)
+        if not translation:
+            raise HTTPException(status_code=404, detail=f"no translation for {qid}")
+        chunks = translation.get("chunks") or []
+        new_chunks, n_changed = apply_interwiki_fix(chunks)
+        if n_changed > 0:
+            now = _dt.now(_UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            conn.execute(
+                "UPDATE translations SET chunks_json = ?, updated_at = ? WHERE qid = ?",
+                (_json.dumps(new_chunks, ensure_ascii=False), now, qid),
+            )
+            conn.commit()
+    return {"n_changed": n_changed}
+
+
 @app.get("/translate/{qid}/term_check")
 def translate_term_check(qid: str):
     """
