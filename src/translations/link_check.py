@@ -25,6 +25,7 @@ import httpx
 from src.translations.term_check import load_dictionary as _load_term_dict
 
 WIKILINK_RE = re.compile(r"\[\[(?P<target>[^\[\]|\n]+?)(?:\|(?P<display>[^\[\]\n]+?))?\]\]")
+ANNOTATED_LINK_RE = re.compile(r"\{\{annotated link\s*\|\s*(?P<target>[^|}\n]+?)\s*(?:\|[^}]*)?\}\}", re.IGNORECASE)
 INTERWIKI_RE = re.compile(r"^:?(en|de|fr|zh|ko|es|meta|mw|wikt|commons|wikidata|d|q):", re.IGNORECASE)
 
 
@@ -82,9 +83,9 @@ class LinkRef:
 
 def extract_links(text: str) -> list[tuple[str, str, int, int]]:
     """
-    text 内の wikilink を抽出する。返り値: [(target, display, start, end), ...]
-    interwiki 形式 (:en:foo, meta:foo, etc) は skip。
-    File:/Image:/Category: もメタ参照なので skip。
+    text 内のリンクを抽出する。`[[...]]` と `{{annotated link|...}}` の両方を対象に。
+    返り値: [(target, display, start, end), ...]
+    interwiki / File:/Image: / フラグメントは skip。
     """
     results = []
     for m in WIKILINK_RE.finditer(text):
@@ -96,10 +97,16 @@ def extract_links(text: str) -> list[tuple[str, str, int, int]]:
             continue
         if re.match(r"^(File|Image|Category|画像|ファイル|カテゴリ):", target, re.IGNORECASE):
             continue
-        # フラグメントだけのリンク (例: #section) は skip
         if target.startswith("#"):
             continue
         results.append((target, display, m.start(), m.end()))
+    # {{annotated link|term}} 形式 (関連項目セクションでよく使われる)
+    for m in ANNOTATED_LINK_RE.finditer(text):
+        target = (m.group("target") or "").strip()
+        if not target:
+            continue
+        # display は target と同じ扱い
+        results.append((target, target, m.start(), m.end()))
     return results
 
 
@@ -285,11 +292,11 @@ def apply_interwiki_fix(chunks: list[dict]) -> tuple[list[dict], int]:
     n_changed = 0
     new_chunks = []
     for ch in chunks:
-        ch = dict(ch)  # shallow copy
+        ch = dict(ch)
         cid = int(ch.get("id", -1))
         dst = ch.get("dst", "") or ""
 
-        def _replace(m: re.Match) -> str:
+        def _replace_wikilink(m: re.Match) -> str:
             nonlocal n_changed
             target = (m.group("target") or "").strip()
             display = (m.group("display") or target).strip()
@@ -299,7 +306,18 @@ def apply_interwiki_fix(chunks: list[dict]) -> tuple[list[dict], int]:
                 return sugg
             return m.group(0)
 
-        new_dst = WIKILINK_RE.sub(_replace, dst)
+        def _replace_annotated(m: re.Match) -> str:
+            nonlocal n_changed
+            target = (m.group("target") or "").strip()
+            sugg = suggestions.get((cid, target, target))
+            if sugg:
+                n_changed += 1
+                # annotated link → 通常 list item で仮リンク
+                return sugg
+            return m.group(0)
+
+        new_dst = WIKILINK_RE.sub(_replace_wikilink, dst)
+        new_dst = ANNOTATED_LINK_RE.sub(_replace_annotated, new_dst)
         ch["dst"] = new_dst
         new_chunks.append(ch)
 

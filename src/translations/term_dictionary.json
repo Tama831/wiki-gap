@@ -168,6 +168,18 @@
       "ja_aliases": [],
       "sources": ["en:Seth Roberts"],
       "aliases": []
+    },
+    "parallel study": {
+      "ja": "並行群間比較試験",
+      "ja_aliases": ["群間比較試験", "群間比較研究", "並行群間試験"],
+      "sources": ["en:Parallel study", "JAMS"],
+      "aliases": ["group comparison study"]
+    },
+    "B. F. Skinner": {
+      "ja": "B・F・スキナー",
+      "ja_aliases": ["バラス・スキナー", "B.F.スキナー"],
+      "sources": ["en:B. F. Skinner", "wiki-ja:バラス・スキナー"],
+      "aliases": []
     }
   }
 }
