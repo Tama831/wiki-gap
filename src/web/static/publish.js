@@ -84,6 +84,60 @@
     targetDisplay.textContent = `${lang}.wikipedia.org の「${fullTitle}」`;
   }
 
+  async function runTermCheck() {
+    const summaryEl = document.getElementById("term-check-summary");
+    const listEl = document.getElementById("term-check-list");
+    if (!summaryEl || !listEl) return;
+    summaryEl.textContent = "読み込み中…";
+    summaryEl.className = "term-panel-summary muted";
+    listEl.innerHTML = "";
+    try {
+      const res = await fetch(`/translate/${qid}/term_check`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const total = data.total_terms || 0;
+      const matched = data.matched || 0;
+      const missing = data.missing || 0;
+      let cls = "ok";
+      let icon = "✅";
+      if (missing > 0) { cls = "warn"; icon = "⚠"; }
+      if (total === 0) { cls = "muted"; icon = "ℹ"; }
+      summaryEl.className = `term-panel-summary ${cls}`;
+      summaryEl.textContent =
+        total === 0
+          ? `${icon} 検出された医学用語なし (辞書 ${data.dict_size || ""})`
+          : `${icon} ${matched}/${total} 標準訳と一致 ` +
+            (missing > 0 ? ` · ${missing} 件は推奨訳と異なる訳語の可能性 (要確認)` : " (全用語マッチ)");
+      // 詳細
+      const summary = data.summary || [];
+      summary.sort((a, b) => (a.found - b.found) || a.chunk_id - b.chunk_id);
+      listEl.innerHTML = summary.map(h => {
+        const cls = h.found ? "ok" : "miss";
+        const ic = h.found ? "✅" : "⚠";
+        return (
+          `<div class="term-hit-row ${cls}">` +
+          `<span class="icon">${ic}</span>` +
+          `<span class="src-term">${escapeHtml(h.en)}</span>` +
+          `<span class="ja-term">→ ${escapeHtml(h.expected_ja)}</span>` +
+          `<span class="sources">${escapeHtml((h.sources||[]).slice(0,2).join(', '))}</span>` +
+          `</div>`
+        );
+      }).join("");
+    } catch (e) {
+      summaryEl.className = "term-panel-summary error";
+      summaryEl.textContent = `❌ チェック失敗: ${e.message}`;
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  const refreshBtn = document.getElementById("term-check-refresh");
+  if (refreshBtn) refreshBtn.addEventListener("click", runTermCheck);
+
   function openModal() {
     if (!isLoggedIn) {
       if (confirm("Wikipedia にログインしていません。ログイン画面に進みますか？")) {
@@ -105,6 +159,7 @@
     const tagChk = document.getElementById("add-honyaku-tag");
     if (tagChk) tagChk.checked = false;
     modal.classList.remove("hidden");
+    runTermCheck();
   }
   function closeModal() {
     modal.classList.add("hidden");

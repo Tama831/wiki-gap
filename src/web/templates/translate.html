@@ -146,6 +146,17 @@
           <input type="checkbox" id="add-honyaku-tag" />
           先頭に <code>{{ '{{翻訳中途}}' }}</code> テンプレートを追加 (翻訳途中の場合に推奨)
         </label>
+        <div id="term-check-panel" class="term-panel">
+          <div class="term-panel-header">
+            <span>📚 医学用語チェック (MeSH / 医学会用語集 / ja Wikipedia 慣行)</span>
+            <button id="term-check-refresh" type="button" class="link-button">[再チェック]</button>
+          </div>
+          <div id="term-check-summary" class="term-panel-summary muted">読み込み中…</div>
+          <details id="term-check-details">
+            <summary>詳細を見る</summary>
+            <div id="term-check-list"></div>
+          </details>
+        </div>
         <p class="modal-info">
           📋 ボタンを押すと wikitext をクリップボードにコピー → 新タブで <code>action=edit</code> 画面を開きます。
           Cmd+V で貼付 → 「変更を公開」で投稿。

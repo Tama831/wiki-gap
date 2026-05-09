@@ -591,6 +591,20 @@ def translate_publish(qid: str, body: PublishRequest):
     }
 
 
+@app.get("/translate/{qid}/term_check")
+def translate_term_check(qid: str):
+    """
+    医学用語チェック: en src 中の専門用語が ja dst で標準訳語 (MeSH /
+    日本医学会用語集 / wiki-ja 慣行) で訳されているかチェック。
+    """
+    from src.translations.term_check import check_all_chunks
+    with connect(read_only=True) as conn:
+        translation = translations_service.get_translation(conn, qid)
+    if not translation:
+        raise HTTPException(status_code=404, detail=f"no translation for {qid}")
+    return check_all_chunks(translation.get("chunks") or [])
+
+
 @app.get("/translate/{qid}/last_publish")
 def translate_last_publish(qid: str):
     with connect(read_only=True) as conn:

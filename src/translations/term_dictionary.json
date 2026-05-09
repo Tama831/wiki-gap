@@ -1,0 +1,167 @@
+{
+  "_meta": {
+    "description": "EN → JA 医学用語対訳辞書 (MeSH + 日本医学会医学用語辞典 + ja Wikipedia 慣行)。各エントリは英語 lemma (lower-case) → {ja: 標準訳, sources: 出典, aliases: 同義語}。新しい記事を訳すたびに追記する。",
+    "version": "0.1",
+    "last_updated": "2026-05-09",
+    "sources_legend": {
+      "MeSH": "Medical Subject Headings (NLM)",
+      "JAMS": "日本医学会 医学用語辞典",
+      "MeSH-JP": "MeSH 日本語 (NIPH/DBCLS)",
+      "wiki-ja": "ja.wikipedia.org の確立した記事タイトル",
+      "厚労省": "厚生労働省 公式用語",
+      "PMDA": "医薬品医療機器総合機構"
+    }
+  },
+  "terms": {
+    "clinical trial": {
+      "ja": "臨床試験",
+      "sources": ["MeSH:D016430", "wiki-ja:臨床試験", "JAMS"],
+      "aliases": ["clinical study", "clinical research"]
+    },
+    "randomized controlled trial": {
+      "ja": "ランダム化比較試験",
+      "sources": ["MeSH:D016449", "wiki-ja:ランダム化比較試験", "JAMS"],
+      "aliases": ["RCT", "random controlled trial"]
+    },
+    "random allocation": {
+      "ja": "無作為割付",
+      "sources": ["MeSH:D012003", "JAMS"],
+      "aliases": ["random assignment", "randomization"]
+    },
+    "blinded experiment": {
+      "ja": "盲検試験",
+      "ja_aliases": ["盲検化", "盲検法"],
+      "sources": ["MeSH:D004311", "wiki-ja:盲検試験", "JAMS"],
+      "aliases": ["blinding", "blinded study", "double-blind"]
+    },
+    "personalized medicine": {
+      "ja": "個別化医療",
+      "sources": ["MeSH:D057285", "wiki-ja:個別化医療", "JAMS", "厚労省"],
+      "aliases": ["precision medicine", "individualized medicine"]
+    },
+    "chronic disease": {
+      "ja": "慢性疾患",
+      "sources": ["MeSH:D002908", "wiki-ja:慢性疾患", "JAMS"],
+      "aliases": ["chronic illness", "chronic condition"]
+    },
+    "osteoarthritis": {
+      "ja": "変形性関節症",
+      "sources": ["MeSH:D010003", "wiki-ja:変形性関節症", "JAMS"],
+      "aliases": []
+    },
+    "neuropathic pain": {
+      "ja": "神経障害性疼痛",
+      "sources": ["MeSH:D009437", "wiki-ja:神経障害性疼痛", "JAMS"],
+      "aliases": ["neuropathy pain"]
+    },
+    "attention deficit hyperactivity disorder": {
+      "ja": "注意欠如・多動症",
+      "sources": ["MeSH:D001289", "wiki-ja:注意欠如・多動症", "JAMS", "DSM-5-TR"],
+      "aliases": ["ADHD", "attention-deficit hyperactivity disorder", "attention-deficit/hyperactivity disorder"]
+    },
+    "high blood pressure": {
+      "ja": "高血圧",
+      "sources": ["MeSH:D006973", "wiki-ja:高血圧", "JAMS"],
+      "aliases": ["hypertension"]
+    },
+    "systolic pressure": {
+      "ja": "収縮期血圧",
+      "sources": ["JAMS", "wiki-ja:収縮期血圧"],
+      "aliases": ["systolic blood pressure"]
+    },
+    "frequentist probability": {
+      "ja": "頻度論",
+      "sources": ["wiki-ja:頻度論"],
+      "aliases": ["frequentist statistics", "frequentist"]
+    },
+    "bayesian methods": {
+      "ja": "ベイズ統計",
+      "sources": ["wiki-ja:ベイズ統計", "JAMS"],
+      "aliases": ["bayesian statistics", "bayesian inference"]
+    },
+    "causal inference": {
+      "ja": "因果推論",
+      "sources": ["wiki-ja:因果推論"],
+      "aliases": []
+    },
+    "counterfactual": {
+      "ja": "反実仮想",
+      "sources": ["wiki-ja:反実仮想"],
+      "aliases": ["counterfactual reasoning"]
+    },
+    "quasi-experiment": {
+      "ja": "準実験",
+      "sources": ["wiki-ja:準実験"],
+      "aliases": ["quasi-experimental", "quasi experiment"]
+    },
+    "trial and error": {
+      "ja": "試行錯誤",
+      "sources": ["wiki-ja:試行錯誤"],
+      "aliases": []
+    },
+    "causality": {
+      "ja": "因果関係",
+      "ja_aliases": ["因果性"],
+      "sources": ["wiki-ja:因果関係", "JAMS"],
+      "aliases": []
+    },
+    "rare disease": {
+      "ja": "希少疾患",
+      "sources": ["MeSH:D035583", "wiki-ja:希少疾患", "厚労省"],
+      "aliases": ["orphan disease"]
+    },
+    "antisense oligonucleotide": {
+      "ja": "アンチセンスオリゴヌクレオチド",
+      "sources": ["MeSH:D016376", "wiki-ja:アンチセンス核酸", "JAMS", "PMDA"],
+      "aliases": ["ASO", "antisense oligonucleotides"]
+    },
+    "gene therapy": {
+      "ja": "遺伝子治療",
+      "sources": ["MeSH:D015316", "wiki-ja:遺伝子治療", "JAMS", "PMDA"],
+      "aliases": []
+    },
+    "single-subject design": {
+      "ja": "単一症例デザイン",
+      "sources": ["wiki-ja:単一症例デザイン"],
+      "aliases": ["single-case design", "single subject design"]
+    },
+    "crossover study": {
+      "ja": "クロスオーバー試験",
+      "ja_aliases": ["クロスオーバー法", "クロスオーバーデザイン", "クロスオーバー"],
+      "sources": ["MeSH:D018592", "wiki-ja:クロスオーバー試験", "JAMS"],
+      "aliases": ["crossover trial", "crossover design", "multiple crossover"]
+    },
+    "applied behavior analysis": {
+      "ja": "応用行動分析",
+      "ja_aliases": [],
+      "sources": ["wiki-ja:応用行動分析", "JAMS"],
+      "aliases": []
+    },
+    "anecdotal evidence": {
+      "ja": "逸話的証拠",
+      "sources": ["wiki-ja:逸話的証拠"],
+      "aliases": []
+    },
+    "quantified self": {
+      "ja": "クオンティファイド・セルフ",
+      "ja_aliases": ["自己定量化", "セルフトラッキング"],
+      "sources": ["wiki-ja:クオンティファイド・セルフ"],
+      "aliases": ["quantified-self"]
+    },
+    "wash-out period": {
+      "ja": "ウォッシュアウト期間",
+      "sources": ["JAMS", "PMDA"],
+      "aliases": ["washout period", "wash out period"]
+    },
+    "placebo": {
+      "ja": "プラセボ",
+      "sources": ["MeSH:D010919", "wiki-ja:プラセボ", "JAMS"],
+      "aliases": []
+    },
+    "evidence-based medicine": {
+      "ja": "エビデンスに基づく医療",
+      "sources": ["MeSH:D019317", "wiki-ja:エビデンスに基づく医療", "JAMS"],
+      "aliases": ["EBM"]
+    }
+  }
+}
