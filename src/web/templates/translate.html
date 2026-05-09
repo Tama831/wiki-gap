@@ -39,7 +39,7 @@
           <a href="/translate/{{ qid }}/preview" target="_blank" role="button" class="outline">👁 プレビュー</a>
           <a href="/translate/{{ qid }}/export?mode=skeleton" role="button" class="outline">📥 skeleton</a>
           <a href="/translate/{{ qid }}/export?mode=compact" role="button" class="outline">📥 compact</a>
-          <button id="publish-btn" class="primary" type="button">🚀 下書きに投稿…</button>
+          <button id="publish-btn" class="primary" type="button">📋 投稿用にコピー…</button>
           <span id="wiki-auth-status" class="auth-status muted">[Wiki ログイン状態 取得中…]</span>
           <button id="refetch-en" class="outline secondary" type="button">en再取得</button>
         {% endif %}
@@ -132,13 +132,17 @@
           <input type="text" id="publish-summary" placeholder="自動: 翻訳支援ツール (wiki-gap, ...) を用いた N-of-1 trial の翻訳下書き" />
         </label>
         <p class="modal-warn">
-          <strong>注意:</strong> 投稿は <strong id="publish-target-display">下書き:&lt;タイトル&gt;</strong> に対する <em>編集</em> です。
-          既存ページがある場合は<strong>上書き</strong>されます。下書き名前空間以外への投稿は慎重に。
+          <strong>📋 半自動 handoff モード:</strong>
+          Hetzner サーバの IP は Wikimedia 財団によりグローバルブロックされているため、
+          API 直接投稿ではなく <strong>クリップボード経由でブラウザ投稿</strong> します。
+          <br>投稿先 <strong id="publish-target-display">利用者:&lt;ユーザ名&gt;/&lt;タイトル&gt;</strong> の編集画面を新タブで開き、
+          wikitext を Cmd+V で貼り付け → 内容確認 → 「ページを保存」で投稿してください。
+          編集要約は pre-fill されます。
         </p>
       </div>
       <div class="modal-actions">
         <button id="publish-cancel" class="secondary outline" type="button">キャンセル</button>
-        <button id="publish-confirm" class="primary" type="button">🚀 投稿実行</button>
+        <button id="publish-confirm" class="primary" type="button">📋 wikitext コピー + 編集画面を開く</button>
       </div>
     </div>
   </div>

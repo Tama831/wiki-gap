@@ -114,50 +114,89 @@
 
   if (confirmBtn) {
     confirmBtn.addEventListener("click", async () => {
-      const body = {
-        target_lang: langSel.value,
-        namespace: nsSel.value,
-        title: (titleInput.value || "").trim() || null,
-        summary: (summaryInput.value || "").trim() || null,
-        confirm: true,
-      };
-      // 利用者 / User 名前空間の特別ハンドリング: ユーザ名を prefix に組み込む
-      if (body.namespace === "利用者" || body.namespace === "User") {
+      const lang = langSel.value;
+      const ns = nsSel.value;
+      let baseTitle = (titleInput.value || "").trim() ||
+                      (lang === "ja" ? jaTitle : enTitle) || "";
+      if (!baseTitle) {
+        alert("タイトルが設定されていません。");
+        return;
+      }
+      // 利用者 / User: ユーザ名を prefix に組み込む
+      if (ns === "利用者" || ns === "User") {
         if (!currentUser) {
           alert("ログインユーザ名が取得できていません。再ログインしてください。");
           return;
         }
-        const t = body.title || (langSel.value === "ja" ? jaTitle : enTitle);
-        body.title = `${currentUser}/${t}`;
+        baseTitle = `${currentUser}/${baseTitle}`;
       }
+      const fullTitle = ns ? `${ns}:${baseTitle}` : baseTitle;
+      const summary = (summaryInput.value || "").trim() ||
+        `[wiki-gap] [[:${lang === "ja" ? "en" : "ja"}:${enTitle}]] からの翻訳下書き (機械翻訳支援後、人手で確認)`;
+
       confirmBtn.disabled = true;
-      confirmBtn.textContent = "📤 投稿中...";
+      confirmBtn.textContent = "📋 準備中...";
       try {
-        const res = await fetch(`/translate/${qid}/publish`, {
+        // 1) wikitext を取得
+        const exportRes = await fetch(`/translate/${qid}/export?mode=compact`);
+        if (!exportRes.ok) throw new Error(`export 失敗 HTTP ${exportRes.status}`);
+        const wikitext = await exportRes.text();
+
+        // 2) クリップボードにコピー
+        let copyOk = false;
+        try {
+          await navigator.clipboard.writeText(wikitext);
+          copyOk = true;
+        } catch (e) {
+          // clipboard API 拒否時はテキストエリア fallback
+          const ta = document.createElement("textarea");
+          ta.value = wikitext;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          try { copyOk = document.execCommand("copy"); } catch (_) {}
+          document.body.removeChild(ta);
+        }
+
+        // 3) 編集画面 URL を組み立て (title + action=edit + summary を pre-fill)
+        const editUrl = `https://${lang}.wikipedia.org/w/index.php?` +
+          `title=${encodeURIComponent(fullTitle.replace(/ /g, "_"))}` +
+          `&action=edit` +
+          `&summary=${encodeURIComponent(summary)}`;
+
+        // 4) handoff ログ (任意、失敗しても先に進む)
+        fetch(`/translate/${qid}/handoff_log`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          alert(`❌ 投稿失敗:\n${data.detail || JSON.stringify(data)}`);
-          return;
-        }
+          body: JSON.stringify({
+            target_lang: lang,
+            namespace: ns,
+            title: fullTitle,
+            edit_summary: summary,
+          }),
+        }).catch(() => {});
+
         closeModal();
-        const ok = confirm(
-          `✅ 投稿成功！\n\n` +
-          `ページ: ${data.page_title}\n` +
-          `revision: ${data.revision_id}\n\n` +
-          `投稿先を新タブで開きますか？`
-        );
-        if (ok && data.page_url) {
-          window.open(data.page_url, "_blank");
-        }
+        const msg =
+          (copyOk
+            ? "✅ wikitext をクリップボードにコピーしました\n\n"
+            : "⚠️ クリップボードコピーに失敗 (ブラウザ権限を確認してください)\n手動で /export をダウンロードしてください\n\n") +
+          `▶ 次のステップ:\n` +
+          `1. 開く編集画面で本文を Cmd+A → Cmd+V で貼り付け\n` +
+          `2. 編集要約は既に pre-fill 済み\n` +
+          `3. 「変更を公開」または「ページを保存」をクリック\n\n` +
+          `投稿先: ${lang}.wikipedia.org の「${fullTitle}」`;
+        alert(msg);
+
+        // 5) 編集画面を新タブで開く
+        window.open(editUrl, "_blank");
+
       } catch (e) {
         alert(`❌ ${e.message}`);
       } finally {
         confirmBtn.disabled = false;
-        confirmBtn.textContent = "🚀 投稿実行";
+        confirmBtn.textContent = "📋 wikitext コピー + 編集画面を開く";
       }
     });
   }

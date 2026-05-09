@@ -598,6 +598,30 @@ def translate_last_publish(qid: str):
     return last or {}
 
 
+class HandoffLog(BaseModel):
+    target_lang: str
+    namespace: str
+    title: str
+    edit_summary: str
+
+
+@app.post("/translate/{qid}/handoff_log")
+def translate_handoff_log(qid: str, body: HandoffLog):
+    """半自動 handoff モード (clipboard + 編集画面オープン) の利用ログ。"""
+    with connect() as conn:
+        wiki_auth_service.log_publish(
+            conn,
+            qid=qid,
+            target_lang=body.target_lang,
+            target_namespace=body.namespace,
+            target_title=body.title,
+            edit_summary=body.edit_summary,
+            revision_id=None,
+            status="handoff_opened",
+        )
+    return {"ok": True}
+
+
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz():
     try:
