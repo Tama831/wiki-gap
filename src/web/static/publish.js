@@ -4,6 +4,7 @@
   const qid = window.WIKI_GAP_QID;
   const jaTitle = window.WIKI_GAP_JA_TITLE || "";
   const enTitle = window.WIKI_GAP_EN_TITLE || "";
+  const sourceRevid = window.WIKI_GAP_SOURCE_REVID || 0;
 
   const statusEl = document.getElementById("wiki-auth-status");
   const publishBtn = document.getElementById("publish-btn");
@@ -95,6 +96,14 @@
     summaryInput.value = "";
     rebuildNamespaceOptions();
     updateTargetDisplay();
+    // レビュー確認は毎回外す
+    const reviewedChk = document.getElementById("reviewed-confirm");
+    if (reviewedChk) {
+      reviewedChk.checked = false;
+      confirmBtn.disabled = true;
+    }
+    const tagChk = document.getElementById("add-honyaku-tag");
+    if (tagChk) tagChk.checked = false;
     modal.classList.remove("hidden");
   }
   function closeModal() {
@@ -111,6 +120,14 @@
   });
   nsSel.addEventListener("change", updateTargetDisplay);
   titleInput.addEventListener("input", updateTargetDisplay);
+
+  // レビュー確認チェックボックスで投稿ボタン enable/disable
+  const reviewedChk = document.getElementById("reviewed-confirm");
+  if (reviewedChk) {
+    reviewedChk.addEventListener("change", () => {
+      confirmBtn.disabled = !reviewedChk.checked;
+    });
+  }
 
   if (confirmBtn) {
     confirmBtn.addEventListener("click", async () => {
@@ -131,8 +148,13 @@
         baseTitle = `${currentUser}/${baseTitle}`;
       }
       const fullTitle = ns ? `${ns}:${baseTitle}` : baseTitle;
-      const summary = (summaryInput.value || "").trim() ||
-        `[wiki-gap] [[:${lang === "ja" ? "en" : "ja"}:${enTitle}]] からの翻訳下書き (機械翻訳支援後、人手で確認)`;
+      // Wikipedia 翻訳ガイドライン準拠の編集要約 (履歴継承 = oldid 必須)
+      const sourceLang = lang === "ja" ? "en" : "ja";
+      const oldidPart = sourceRevid ? ` (oldid=${sourceRevid})` : "";
+      const defaultSummary =
+        `[[:${sourceLang}:${enTitle}]]${oldidPart} を翻訳 ` +
+        `[wiki-gap (https://github.com/PLACEHOLDER/wiki-gap) で機械翻訳支援、医師が全文レビュー]`;
+      const summary = (summaryInput.value || "").trim() || defaultSummary;
 
       confirmBtn.disabled = true;
       confirmBtn.textContent = "📋 準備中...";
@@ -140,7 +162,13 @@
         // 1) wikitext を取得
         const exportRes = await fetch(`/translate/${qid}/export?mode=compact`);
         if (!exportRes.ok) throw new Error(`export 失敗 HTTP ${exportRes.status}`);
-        const wikitext = await exportRes.text();
+        let wikitext = await exportRes.text();
+
+        // {{翻訳中途}} テンプレートを先頭に追加 (オプション)
+        const tagChk = document.getElementById("add-honyaku-tag");
+        if (tagChk && tagChk.checked) {
+          wikitext = "{{翻訳中途}}\n" + wikitext;
+        }
 
         // 2) クリップボードにコピー
         let copyOk = false;

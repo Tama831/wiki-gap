@@ -131,18 +131,29 @@
         <label>編集要約 (空なら自動生成)
           <input type="text" id="publish-summary" placeholder="自動: 翻訳支援ツール (wiki-gap, ...) を用いた N-of-1 trial の翻訳下書き" />
         </label>
-        <p class="modal-warn">
-          <strong>📋 半自動 handoff モード:</strong>
-          Hetzner サーバの IP は Wikimedia 財団によりグローバルブロックされているため、
-          API 直接投稿ではなく <strong>クリップボード経由でブラウザ投稿</strong> します。
-          <br>投稿先 <strong id="publish-target-display">利用者:&lt;ユーザ名&gt;/&lt;タイトル&gt;</strong> の編集画面を新タブで開き、
-          wikitext を Cmd+V で貼り付け → 内容確認 → 「ページを保存」で投稿してください。
-          編集要約は pre-fill されます。
+        <p class="modal-warn-strong">
+          <strong>📚 重要 — <a href="https://ja.wikipedia.org/wiki/Wikipedia:%E7%BF%BB%E8%A8%B3%E3%81%AE%E3%82%AC%E3%82%A4%E3%83%89%E3%83%A9%E3%82%A4%E3%83%B3" target="_blank">Wikipedia:翻訳のガイドライン</a> 準拠を確認してください</strong>:
+          <br>① <strong>機械翻訳の出力をそのまま貼り付けることは禁止</strong> (<a href="https://ja.wikipedia.org/wiki/Wikipedia:%E5%89%8A%E9%99%A4%E3%81%AE%E6%96%B9%E9%87%9D" target="_blank">即時削除 G-3</a> 対象)。
+            wiki-gap の下訳を <strong>全 chunk 通読 + 必要な書き直し</strong> 済みであること。
+          <br>② <strong>履歴継承</strong>として編集要約に <code>oldid={{ ((translation or {}).get('source_revision_id') or 0) }}</code> を自動付与します (CC BY-SA 必須)。
+          <br>③ 投稿先: <strong id="publish-target-display">利用者:&lt;ユーザ名&gt;/&lt;タイトル&gt;</strong>
+        </p>
+        <label class="review-check">
+          <input type="checkbox" id="reviewed-confirm" />
+          下訳を全 chunk レビュー済みで、機械翻訳の単純貼り付けではないことを医師として確認しました
+        </label>
+        <label class="review-check">
+          <input type="checkbox" id="add-honyaku-tag" />
+          先頭に <code>{{ '{{翻訳中途}}' }}</code> テンプレートを追加 (翻訳途中の場合に推奨)
+        </label>
+        <p class="modal-info">
+          📋 ボタンを押すと wikitext をクリップボードにコピー → 新タブで <code>action=edit</code> 画面を開きます。
+          Cmd+V で貼付 → 「変更を公開」で投稿。
         </p>
       </div>
       <div class="modal-actions">
         <button id="publish-cancel" class="secondary outline" type="button">キャンセル</button>
-        <button id="publish-confirm" class="primary" type="button">📋 wikitext コピー + 編集画面を開く</button>
+        <button id="publish-confirm" class="primary" type="button" disabled>📋 wikitext コピー + 編集画面を開く</button>
       </div>
     </div>
   </div>
@@ -152,6 +163,8 @@
     window.WIKI_GAP_HAS_TRANSLATION = {{ "true" if translation else "false" }};
     window.WIKI_GAP_JA_TITLE = {{ ((translation or {}).get('ja_title_proposed') or '') | tojson }};
     window.WIKI_GAP_EN_TITLE = {{ ((translation or {}).get('en_title') or '') | tojson }};
+    window.WIKI_GAP_SOURCE_REVID = {{ ((translation or {}).get('source_revision_id') or 0) | tojson }};
+    window.WIKI_GAP_CHUNKS_TOTAL = {{ ((translation or {}).get('chunks') or [])|length }};
   </script>
   <script src="/static/translate.js" defer></script>
   <script src="/static/publish.js" defer></script>
