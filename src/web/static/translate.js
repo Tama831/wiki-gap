@@ -48,6 +48,28 @@
 
   if (!hasTranslation) return; // ここから下は translation 既存の場合のみ
 
+  // ── ステータス変更 (draft / review / submitted) ──
+  const statusSel = document.getElementById("status-select");
+  if (statusSel) {
+    statusSel.addEventListener("change", async () => {
+      const newStatus = statusSel.value;
+      const old = statusSel.dataset.current;
+      try {
+        const res = await fetch(`/translate/${qid}/meta`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        statusSel.dataset.current = newStatus;
+        setStatus(`✅ ステータスを ${newStatus} に変更`, "saved");
+      } catch (e) {
+        statusSel.value = old;
+        setStatus(`❌ ${e.message}`, "error");
+      }
+    });
+  }
+
   // ── ja タイトル編集 ──
   const editJaTitleBtn = document.getElementById("edit-ja-title");
   const jaTitleSpan = document.querySelector(".ja-title-display");

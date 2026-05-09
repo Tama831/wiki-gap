@@ -13,7 +13,13 @@
       <h1>wiki-gap <span class="muted">— 日英ギャップ検出</span></h1>
       <p class="muted">
         total: {{ total }} articles · sorted by <strong>{{ sort }}</strong> ({{ direction }}) · category: <strong>{{ category or "all" }}</strong>
-        · <a href="/translations">📝 翻訳プロジェクト一覧</a>
+        · <a href="/translations">📝 翻訳プロジェクト ({{ n_translations }})</a>
+        {% if status_counts %}
+          ·
+          {% if status_counts.get('draft') %}<span class="status-pill status-draft">📝 下書き {{ status_counts['draft'] }}</span>{% endif %}
+          {% if status_counts.get('review') %}<span class="status-pill status-review">👀 レビュー {{ status_counts['review'] }}</span>{% endif %}
+          {% if status_counts.get('submitted') %}<span class="status-pill status-submitted">✅ 投稿済 {{ status_counts['submitted'] }}</span>{% endif %}
+        {% endif %}
       </p>
     </header>
 
@@ -24,6 +30,17 @@
           <option value="disease" {% if category == "disease" %}selected{% endif %}>disease</option>
           <option value="drug" {% if category == "drug" %}selected{% endif %}>drug</option>
           <option value="procedure" {% if category == "procedure" %}selected{% endif %}>procedure</option>
+          <option value="study" {% if category == "study" %}selected{% endif %}>study</option>
+        </select>
+      </label>
+      <label>翻訳状態
+        <select name="tstatus">
+          <option value="" {% if not translation_status %}selected{% endif %}>all</option>
+          <option value="none" {% if translation_status == "none" %}selected{% endif %}>未着手のみ</option>
+          <option value="in_progress" {% if translation_status == "in_progress" %}selected{% endif %}>📝 進行中 (draft+review)</option>
+          <option value="draft" {% if translation_status == "draft" %}selected{% endif %}>📝 draft</option>
+          <option value="review" {% if translation_status == "review" %}selected{% endif %}>👀 review</option>
+          <option value="done" {% if translation_status == "done" %}selected{% endif %}>✅ 投稿済 (submitted)</option>
         </select>
       </label>
       <label>sort
@@ -61,6 +78,7 @@
           <th class="num">en pv 90d</th>
           <th class="num">ja pv 90d</th>
           <th class="num">gap</th>
+          <th>翻訳</th>
           <th>updated</th>
           <th></th>
         </tr>
@@ -81,8 +99,19 @@
           <td class="num">{{ "{:,}".format(r.en_pv_90d) if r.en_pv_90d else "—" }}</td>
           <td class="num">{{ "{:,}".format(r.ja_pv_90d) if r.ja_pv_90d else "—" }}</td>
           <td class="num gap">{{ "%.2f"|format(r.gap_score) if r.gap_score else "—" }}</td>
+          <td>
+            {% if r.translation_status == "submitted" %}
+              <span class="status-pill status-submitted">✅ 投稿済</span>
+            {% elif r.translation_status == "review" %}
+              <span class="status-pill status-review">👀 レビュー</span>
+            {% elif r.translation_status == "draft" %}
+              <span class="status-pill status-draft">📝 下書き</span>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
           <td class="muted">{{ r.updated_at[:10] if r.updated_at else "—" }}</td>
-          <td><a href="/translate/{{ r.qid }}" role="button" class="outline translate-btn">翻訳</a></td>
+          <td><a href="/translate/{{ r.qid }}" role="button" class="outline translate-btn">{% if r.translation_status %}編集{% else %}翻訳{% endif %}</a></td>
         </tr>
         {% endfor %}
       </tbody>

@@ -53,6 +53,16 @@ main.translate-main {
 .status-review { background: rgba(80, 160, 220, 0.12); }
 .status-submitted { background: rgba(80, 200, 120, 0.12); }
 
+select.status-inline-select {
+  display: inline-block;
+  width: auto;
+  padding: 0.1rem 1.4rem 0.1rem 0.4rem;
+  font-size: 0.78rem;
+  vertical-align: middle;
+  margin: 0 0.2rem;
+  height: auto;
+}
+
 /* init card */
 .init-card {
   max-width: 600px;

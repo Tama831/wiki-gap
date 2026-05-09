@@ -84,6 +84,7 @@ def index(
     sort: str = Query("gap"),
     direction: str = Query("desc"),
     category: str | None = Query(None),
+    translation_status: str | None = Query(None, alias="tstatus"),
     limit: int = Query(100, ge=1, le=1000),
 ):
     sort_col = SORT_COLUMNS.get(sort, "gap_score")
@@ -92,22 +93,42 @@ def index(
 
     where = []
     params: list = []
-    if category in {"disease", "drug", "procedure"}:
-        where.append("category = ?")
+    if category in {"disease", "drug", "procedure", "study"}:
+        where.append("a.category = ?")
         params.append(category)
+    if translation_status == "none":
+        where.append("t.qid IS NULL")
+    elif translation_status == "in_progress":
+        where.append("t.status IN ('draft', 'review')")
+    elif translation_status == "done":
+        where.append("t.status = 'submitted'")
+    elif translation_status in {"draft", "review", "submitted"}:
+        where.append("t.status = ?")
+        params.append(translation_status)
     where_clause = (" WHERE " + " AND ".join(where)) if where else ""
 
-    # NULLS は最後に
     null_pos = "NULLS LAST" if direction == "desc" else "NULLS FIRST"
     sql = (
-        f"SELECT * FROM articles{where_clause} "
-        f"ORDER BY {sort_col} {direction.upper()} {null_pos} LIMIT ?"
+        "SELECT a.*, t.status AS translation_status, "
+        "       t.ja_title_proposed AS translation_ja_title, "
+        "       t.updated_at AS translation_updated "
+        "FROM articles a "
+        "LEFT JOIN translations t ON a.qid = t.qid"
+        + where_clause
+        + f" ORDER BY a.{sort_col} {direction.upper()} {null_pos} LIMIT ?"
     )
     params.append(limit)
 
     with connect(read_only=True) as conn:
         rows = list(conn.execute(sql, params).fetchall())
         total = article_count(conn)
+        # 翻訳ステータス集計
+        status_counts: dict[str, int] = {}
+        for s, n in conn.execute(
+            "SELECT status, COUNT(*) FROM translations GROUP BY status"
+        ).fetchall():
+            status_counts[s or "unknown"] = n
+        n_translations = sum(status_counts.values())
 
     enriched = []
     for r in rows:
@@ -126,7 +147,10 @@ def index(
             "sort": sort,
             "direction": direction,
             "category": category or "",
+            "translation_status": translation_status or "",
             "limit": limit,
+            "status_counts": status_counts,
+            "n_translations": n_translations,
         },
     )
 

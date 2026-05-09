@@ -117,20 +117,44 @@ def finish_crawl_run(conn: sqlite3.Connection, run_id: int, *,
 def top_gap_articles(conn: sqlite3.Connection, *,
                      limit: int = 100,
                      category: str | None = None,
-                     min_score: float | None = None) -> list[sqlite3.Row]:
+                     min_score: float | None = None,
+                     translation_status: str | None = None) -> list[sqlite3.Row]:
+    """
+    translation_status:
+      None       : フィルタなし
+      'none'     : 翻訳プロジェクト未作成のみ
+      'draft'    : translations.status = 'draft'
+      'review'   : translations.status = 'review'
+      'submitted': translations.status = 'submitted'
+      'in_progress': draft または review
+      'done'     : 'submitted'
+    """
     where = []
     params: list[Any] = []
     if category:
-        where.append("category = ?")
+        where.append("a.category = ?")
         params.append(category)
     if min_score is not None:
-        where.append("gap_score >= ?")
+        where.append("a.gap_score >= ?")
         params.append(min_score)
+    if translation_status == "none":
+        where.append("t.qid IS NULL")
+    elif translation_status == "in_progress":
+        where.append("t.status IN ('draft', 'review')")
+    elif translation_status == "done":
+        where.append("t.status = 'submitted'")
+    elif translation_status in {"draft", "review", "submitted"}:
+        where.append("t.status = ?")
+        params.append(translation_status)
     where_clause = (" WHERE " + " AND ".join(where)) if where else ""
     sql = (
-        "SELECT * FROM articles"
+        "SELECT a.*, t.status AS translation_status, "
+        "       t.ja_title_proposed AS translation_ja_title, "
+        "       t.updated_at AS translation_updated "
+        "FROM articles a "
+        "LEFT JOIN translations t ON a.qid = t.qid"
         + where_clause
-        + " ORDER BY gap_score DESC NULLS LAST LIMIT ?"
+        + " ORDER BY a.gap_score DESC NULLS LAST LIMIT ?"
     )
     params.append(limit)
     return list(conn.execute(sql, params).fetchall())

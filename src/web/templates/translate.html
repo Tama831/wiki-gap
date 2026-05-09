@@ -27,7 +27,13 @@
           QID: <a href="https://www.wikidata.org/wiki/{{ qid }}" target="_blank">{{ qid }}</a>
           {% if translation %}
             · revision: {{ translation.source_revision_id }}
-            · status: <span class="status-badge status-{{ translation.status }}">{{ translation.status }}</span>
+            · status:
+            <select id="status-select" class="status-inline-select"
+                    data-current="{{ translation.status }}">
+              <option value="draft" {% if translation.status == 'draft' %}selected{% endif %}>📝 draft (下書き)</option>
+              <option value="review" {% if translation.status == 'review' %}selected{% endif %}>👀 review (レビュー中)</option>
+              <option value="submitted" {% if translation.status == 'submitted' %}selected{% endif %}>✅ submitted (投稿済)</option>
+            </select>
             · updated: {{ translation.updated_at[:19] }}
             · {{ translation.chunks|length }} chunks
           {% endif %}

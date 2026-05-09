@@ -45,3 +45,28 @@ a.translate-btn {
   padding: 0.2rem 0.55rem;
   white-space: nowrap;
 }
+
+span.status-pill {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 0.4rem;
+  font-size: 0.78rem;
+  border: 1px solid rgba(127, 127, 127, 0.3);
+  white-space: nowrap;
+}
+span.status-pill.status-draft {
+  background: rgba(220, 180, 80, 0.14);
+  border-color: rgba(220, 180, 80, 0.45);
+  color: #7a4600;
+}
+span.status-pill.status-review {
+  background: rgba(80, 160, 220, 0.14);
+  border-color: rgba(80, 160, 220, 0.45);
+  color: #1c4a73;
+}
+span.status-pill.status-submitted {
+  background: rgba(80, 200, 120, 0.16);
+  border-color: rgba(80, 200, 120, 0.45);
+  color: #2a6a3d;
+  font-weight: 600;
+}
