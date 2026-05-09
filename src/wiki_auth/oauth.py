@@ -31,11 +31,11 @@ TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
 
 
 def _user_agent() -> str:
-    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/PLACEHOLDER/wiki-gap")
+    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/Tama831/wiki-gap")
     return f"WikiGapDetector/0.1 ({contact})"
 
 
-_HTTP_HEADERS = {"User-Agent": "WikiGapDetector/0.1 (https://github.com/PLACEHOLDER/wiki-gap)"}
+_HTTP_HEADERS = {"User-Agent": "WikiGapDetector/0.1 (https://github.com/Tama831/wiki-gap)"}
 
 
 @dataclass

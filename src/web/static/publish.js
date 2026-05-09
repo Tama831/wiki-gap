@@ -208,7 +208,7 @@
       const oldidPart = sourceRevid ? ` (oldid=${sourceRevid})` : "";
       const defaultSummary =
         `[[:${sourceLang}:${enTitle}]]${oldidPart} を翻訳 ` +
-        `[wiki-gap (https://github.com/PLACEHOLDER/wiki-gap) で機械翻訳支援、医師が全文レビュー]`;
+        `[wiki-gap (https://github.com/Tama831/wiki-gap) で機械翻訳支援、医師が全文レビュー]`;
       const summary = (summaryInput.value || "").trim() || defaultSummary;
 
       confirmBtn.disabled = true;

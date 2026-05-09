@@ -22,7 +22,7 @@ REST_BASE = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article"
 
 
 def _user_agent() -> str:
-    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/PLACEHOLDER/wiki-gap")
+    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/Tama831/wiki-gap")
     return f"WikiGapDetector/0.1 ({contact})"
 
 
