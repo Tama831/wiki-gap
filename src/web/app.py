@@ -29,6 +29,25 @@ from pydantic import BaseModel
 
 from src.db.queries import article_count, connect, top_gap_articles
 from src.translations import service as translations_service
+from src.wiki_auth import oauth as wiki_oauth
+from src.wiki_auth import service as wiki_auth_service
+from src.wiki_auth.client import WikiClient
+
+# CSRF state for OAuth flow (single-process, in-memory)
+_oauth_state_store: dict[str, dict] = {}
+
+
+def _remember_state(state: str, return_to: str = "") -> None:
+    import time
+    _oauth_state_store[state] = {"time": time.time(), "return_to": return_to}
+    cutoff = time.time() - 600
+    for s in list(_oauth_state_store.keys()):
+        if _oauth_state_store[s]["time"] < cutoff:
+            _oauth_state_store.pop(s, None)
+
+
+def _consume_state(state: str) -> dict | None:
+    return _oauth_state_store.pop(state, None)
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 load_dotenv(ROOT / ".env")
@@ -373,6 +392,200 @@ def translations_index(request: Request):
     return templates.TemplateResponse(
         request, "translations_index.html", {"items": items}
     )
+
+
+# ─────────────────────────────────────────────────────────────────
+# Phase 2B: Wikipedia OAuth + 投稿
+# ─────────────────────────────────────────────────────────────────
+
+
+@app.get("/wiki/login")
+def wiki_login(return_to: str = Query("", alias="return")):
+    """OAuth 認可フロー開始 → meta.wikimedia.org にリダイレクト"""
+    try:
+        state = wiki_oauth.make_state()
+        # 内部URLのみ許可 (open redirect 防止)
+        safe_return = return_to if return_to.startswith("/") else ""
+        _remember_state(state, safe_return)
+        url = wiki_oauth.authorize_url(state)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url=url, status_code=302)
+
+
+@app.get("/wiki/oauth/callback")
+def wiki_oauth_callback(
+    request: Request,
+    code: str | None = Query(None),
+    state: str | None = Query(None),
+    error: str | None = Query(None),
+):
+    """OAuth callback: code → access_token に交換 + 保存"""
+    from fastapi.responses import RedirectResponse
+
+    if error:
+        raise HTTPException(status_code=400, detail=f"OAuth error: {error}")
+    if not code or not state:
+        raise HTTPException(status_code=400, detail="missing code or state")
+    state_entry = _consume_state(state)
+    if state_entry is None:
+        raise HTTPException(status_code=400, detail="invalid or expired state (CSRF check failed)")
+    return_to = state_entry.get("return_to") or ""
+
+    try:
+        tokens = wiki_oauth.exchange_code_for_token(code)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"token exchange failed: {exc}")
+
+    # username を取得して保存
+    username = None
+    user_id_int = None
+    try:
+        with WikiClient(tokens.access_token, lang="ja") as wc:
+            ui = wc.userinfo()
+            username = ui.name
+            user_id_int = ui.user_id
+    except Exception:
+        # userinfo 取得失敗しても token は保存する
+        pass
+
+    with connect() as conn:
+        wiki_auth_service.save_tokens(
+            conn, tokens, username=username, user_id=user_id_int
+        )
+
+    # 認証完了後、ログイン開始時に保存した return_to に戻る
+    target = return_to if return_to and return_to.startswith("/") else "/translations"
+    return RedirectResponse(url=target, status_code=302)
+
+
+@app.post("/wiki/logout")
+def wiki_logout():
+    with connect() as conn:
+        wiki_auth_service.clear_auth(conn)
+    return {"ok": True}
+
+
+@app.get("/wiki/userinfo")
+def wiki_userinfo():
+    """現在のログイン状態を返す。"""
+    with connect() as conn:
+        auth = wiki_auth_service.get_auth(conn)
+    if not auth:
+        return {"logged_in": False}
+    return {
+        "logged_in": True,
+        "username": auth.get("username"),
+        "user_id": auth.get("user_id"),
+        "scopes": auth.get("scopes"),
+        "token_expires_at": auth.get("token_expires_at"),
+    }
+
+
+class PublishRequest(BaseModel):
+    target_lang: str = "ja"           # "ja" | "en"
+    namespace: str = "下書き"          # "下書き" / "Draft" / "" (本記事 — 注意)
+    title: str | None = None           # None なら ja_title_proposed を使う
+    summary: str | None = None         # None なら自動生成
+    minor: bool = False
+    confirm: bool = False              # 投稿確認チェック (true 必須)
+
+
+@app.post("/translate/{qid}/publish")
+def translate_publish(qid: str, body: PublishRequest):
+    """
+    現在の dst (compact mode) を結合して Wikipedia の指定ページに投稿する。
+    """
+    if not body.confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="confirm=true が必要です (投稿前確認のため)",
+        )
+    if body.target_lang not in {"ja", "en"}:
+        raise HTTPException(status_code=400, detail="target_lang must be 'ja' or 'en'")
+
+    with connect() as conn:
+        access_token = wiki_auth_service.get_valid_access_token(conn)
+        if not access_token:
+            raise HTTPException(
+                status_code=401,
+                detail="Wikipedia にログインしていません。/wiki/login から認証してください。",
+            )
+
+        translation = translations_service.get_translation(conn, qid)
+        if not translation:
+            raise HTTPException(status_code=404, detail=f"no translation for {qid}")
+
+        try:
+            wikitext = translations_service.export_wikitext(conn, qid, mode="compact")
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
+
+    # タイトル決定
+    base_title = body.title or translation.get("ja_title_proposed") or translation.get("en_title")
+    if not base_title:
+        raise HTTPException(status_code=400, detail="ja_title_proposed が未設定です")
+
+    namespace = body.namespace.strip()
+    full_title = f"{namespace}:{base_title}" if namespace else base_title
+
+    # 編集要約
+    contact_url = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/PLACEHOLDER/wiki-gap")
+    auto_summary = body.summary or (
+        f"翻訳支援ツール (wiki-gap, {contact_url}) を用いた "
+        f"[[:{body.target_lang}:{translation.get('en_title', '')}]] からの翻訳下書き"
+    )
+
+    try:
+        with WikiClient(access_token, lang=body.target_lang) as wc:
+            result = wc.edit_page(
+                title=full_title,
+                text=wikitext,
+                summary=auto_summary,
+                minor=body.minor,
+            )
+    except Exception as exc:
+        with connect() as conn:
+            wiki_auth_service.log_publish(
+                conn,
+                qid=qid,
+                target_lang=body.target_lang,
+                target_namespace=namespace,
+                target_title=full_title,
+                edit_summary=auto_summary,
+                revision_id=None,
+                status="failed",
+                error_message=str(exc),
+            )
+        raise HTTPException(status_code=502, detail=f"publish failed: {exc}")
+
+    with connect() as conn:
+        wiki_auth_service.log_publish(
+            conn,
+            qid=qid,
+            target_lang=body.target_lang,
+            target_namespace=namespace,
+            target_title=full_title,
+            edit_summary=auto_summary,
+            revision_id=result.new_revision_id,
+            status="success" if result.success else "failed",
+        )
+
+    return {
+        "ok": result.success,
+        "page_title": result.page_title,
+        "page_url": result.page_url,
+        "revision_id": result.new_revision_id,
+        "edit_summary": auto_summary,
+    }
+
+
+@app.get("/translate/{qid}/last_publish")
+def translate_last_publish(qid: str):
+    with connect(read_only=True) as conn:
+        last = wiki_auth_service.latest_publish(conn, qid)
+    return last or {}
 
 
 @app.get("/healthz", response_class=PlainTextResponse)

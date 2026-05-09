@@ -212,3 +212,63 @@ main.translate-main {
 #save-status.saving { color: rgba(220, 150, 50, 0.95); }
 #save-status.saved { color: rgba(80, 180, 100, 0.95); }
 #save-status.error { color: rgba(220, 80, 80, 0.95); }
+
+/* Phase 2B: 投稿ボタン + ログイン状態 */
+.auth-status {
+  font-size: 0.78rem;
+  margin-left: 0.4rem;
+  white-space: nowrap;
+}
+#publish-btn { padding: 0.45rem 0.9rem; font-size: 0.88rem; font-weight: 600; }
+
+/* モーダル */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal.hidden { display: none; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+.modal-card {
+  position: relative;
+  background: var(--pico-background-color, #fff);
+  max-width: 540px;
+  width: 90%;
+  border-radius: 0.5rem;
+  padding: 1.4rem 1.6rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+}
+.modal-card h3 { margin-top: 0; }
+.modal-card label {
+  display: block;
+  margin: 0.6rem 0;
+  font-size: 0.9rem;
+}
+.modal-card label input,
+.modal-card label select {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+}
+.modal-warn {
+  background: rgba(255, 184, 0, 0.12);
+  border: 1px solid rgba(220, 150, 50, 0.4);
+  border-radius: 0.3rem;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.85rem;
+  margin: 0.8rem 0 0.5rem;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}

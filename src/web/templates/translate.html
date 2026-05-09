@@ -39,7 +39,9 @@
           <a href="/translate/{{ qid }}/preview" target="_blank" role="button" class="outline">👁 プレビュー</a>
           <a href="/translate/{{ qid }}/export?mode=skeleton" role="button" class="outline">📥 skeleton</a>
           <a href="/translate/{{ qid }}/export?mode=compact" role="button" class="outline">📥 compact</a>
-          <button id="refetch-en" class="outline" type="button">en再取得</button>
+          <button id="publish-btn" class="primary" type="button">🚀 下書きに投稿…</button>
+          <span id="wiki-auth-status" class="auth-status muted">[Wiki ログイン状態 取得中…]</span>
+          <button id="refetch-en" class="outline secondary" type="button">en再取得</button>
         {% endif %}
       </div>
     </header>
@@ -107,10 +109,50 @@
     </footer>
   </main>
 
+  <!-- 投稿確認モーダル -->
+  <div id="publish-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <h3>📝 Wikipedia に投稿</h3>
+      <div class="modal-body">
+        <label>言語版
+          <select id="publish-lang">
+            <option value="ja" selected>日本語版 (ja.wikipedia.org)</option>
+            <option value="en">英語版 (en.wikipedia.org)</option>
+          </select>
+        </label>
+        <label>名前空間
+          <select id="publish-namespace">
+            <option value="下書き" selected>下書き: (Draft 名前空間 — 推奨)</option>
+            <option value="利用者">利用者:&lt;ユーザ名&gt;/ (個人サンドボックス)</option>
+            <option value="">(本記事空間 — 注意)</option>
+          </select>
+        </label>
+        <label>ページタイトル
+          <input type="text" id="publish-title" placeholder="(空なら ja タイトル候補を使用)" />
+        </label>
+        <label>編集要約 (空なら自動生成)
+          <input type="text" id="publish-summary" placeholder="自動: 翻訳支援ツール (wiki-gap, ...) を用いた N-of-1 trial の翻訳下書き" />
+        </label>
+        <p class="modal-warn">
+          <strong>注意:</strong> 投稿は <strong id="publish-target-display">下書き:&lt;タイトル&gt;</strong> に対する <em>編集</em> です。
+          既存ページがある場合は<strong>上書き</strong>されます。下書き名前空間以外への投稿は慎重に。
+        </p>
+      </div>
+      <div class="modal-actions">
+        <button id="publish-cancel" class="secondary outline" type="button">キャンセル</button>
+        <button id="publish-confirm" class="primary" type="button">🚀 投稿実行</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     window.WIKI_GAP_QID = "{{ qid }}";
     window.WIKI_GAP_HAS_TRANSLATION = {{ "true" if translation else "false" }};
+    window.WIKI_GAP_JA_TITLE = {{ ((translation or {}).get('ja_title_proposed') or '') | tojson }};
+    window.WIKI_GAP_EN_TITLE = {{ ((translation or {}).get('en_title') or '') | tojson }};
   </script>
   <script src="/static/translate.js" defer></script>
+  <script src="/static/publish.js" defer></script>
 </body>
 </html>

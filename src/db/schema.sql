@@ -73,3 +73,37 @@ CREATE TABLE IF NOT EXISTS translations (
 CREATE INDEX IF NOT EXISTS idx_translations_updated ON translations(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_translations_status ON translations(status);
 
+-- ─────────────────────────────────────────────────────────────────
+-- Phase 2B: Wikipedia OAuth 2.0 認証
+-- ─────────────────────────────────────────────────────────────────
+
+-- 単一ユーザ前提 (id=1 のみ)
+CREATE TABLE IF NOT EXISTS wiki_auth (
+  id INTEGER PRIMARY KEY,
+  username TEXT,                     -- Wikipedia ユーザ名 (取得後に埋まる)
+  user_id INTEGER,                   -- Wikipedia user id
+  access_token TEXT NOT NULL,
+  refresh_token TEXT,
+  token_expires_at TEXT,             -- ISO8601 (UTC)
+  scopes TEXT,                       -- スペース区切り
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+-- 投稿履歴ログ
+CREATE TABLE IF NOT EXISTS publish_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  qid TEXT NOT NULL,
+  target_lang TEXT NOT NULL,         -- "ja" | "en"
+  target_namespace TEXT,             -- "下書き" | "" (本記事)
+  target_title TEXT NOT NULL,        -- 完全タイトル (例: "下書き:N-of-1試験")
+  edit_summary TEXT,
+  revision_id INTEGER,               -- 投稿成功時の MW revision id
+  status TEXT NOT NULL,              -- "success" | "failed" | "preview_only"
+  error_message TEXT,
+  posted_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_publish_qid ON publish_log(qid, posted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_publish_posted ON publish_log(posted_at DESC);
+
