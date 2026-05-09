@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-from src.translations.wikitext import Chunk, parse_paragraphs
+from src.translations.wikitext import Chunk, parse_paragraphs, strip_en_only_templates
 
 
 def now_iso() -> str:
@@ -97,6 +97,9 @@ def init_translation(
         return existing
 
     wikitext, revid = fetch_en_wikitext(en_title)
+    # ja Wikipedia 翻訳前処理: en 専用 / ja で非推奨のテンプレートを除去
+    # (Short description / Use dmy dates / Use American English / Cs1 config 等)
+    wikitext, _stripped = strip_en_only_templates(wikitext)
     new_chunks = parse_paragraphs(wikitext)
 
     if existing:

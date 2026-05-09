@@ -208,6 +208,58 @@ def _is_metadata_only(p: str) -> bool:
     return all(_METADATA_LINE_RE.match(ln) for ln in lines)
 
 
+# ── en 専用テンプレートの剥がし (ja Wikipedia 翻訳前処理) ──
+
+# ja Wikipedia で非推奨 / 不要な en 専用テンプレート
+_EN_ONLY_TEMPLATES = [
+    "short description",          # ja 非推奨 (en アプリ用の短い説明)
+    "use dmy dates",              # en 用日付フォーマット指定
+    "use mdy dates",              # 同上
+    "use american english",       # en 用方言指定
+    "use british english",        # 同上
+    "use indian english",         # 同上
+    "use canadian english",       # 同上
+    "use australian english",     # 同上
+    "use new zealand english",    # 同上
+    "cs1 config",                 # 引用スタイル設定 (cs1)
+    "good article",               # en の good article バッジ
+    "featured article",           # en の featured article バッジ
+    "pp-protected",               # en の保護バッジ
+    "pp-semi",                    # 同上
+    "pp-move",                    # 同上
+    "pp-vandalism",               # 同上
+]
+
+
+def _build_strip_template_re() -> "re.Pattern[str]":
+    names = "|".join(re.escape(n) for n in _EN_ONLY_TEMPLATES)
+    # {{<name>}} or {{<name>|...}} (multi-line, ネストなしを仮定)
+    return re.compile(
+        r"\{\{\s*(?:" + names + r")\b[^{}]*?\}\}\s*\n?",
+        re.IGNORECASE | re.DOTALL,
+    )
+
+
+_STRIP_TPL_RE = _build_strip_template_re()
+
+
+def strip_en_only_templates(wikitext: str) -> tuple[str, list[str]]:
+    """
+    en 専用 / ja で不要なテンプレートを wikitext から取り除く。
+    返り値: (clean_text, removed_template_strings)
+    """
+    if not wikitext:
+        return wikitext, []
+    removed: list[str] = []
+
+    def _capture(m: re.Match) -> str:
+        removed.append(m.group(0).strip())
+        return ""
+
+    cleaned = _STRIP_TPL_RE.sub(_capture, wikitext)
+    return cleaned, removed
+
+
 # ── 文単位 split (Phase 2A.6) ──────────────────────────────────────
 
 # 文末記号の後の空白で split。<ref>...</ref> 内部の . は無視する必要がある
