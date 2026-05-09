@@ -632,10 +632,13 @@ def translate_link_check(qid: str):
 @app.post("/translate/{qid}/link_fix")
 def translate_link_fix(qid: str):
     """
-    赤リンクを `[[:en:Foo|display]]` 形式に一括書き換えて chunks_json を更新。
-    返り値: {n_changed, links} (修正された件数 + 結果)
+    赤リンクを {{仮リンク|display|en|Foo}} 形式に一括書き換え。
+    既存の `[[:en:Foo|display]]` 形式 (旧) もまとめて仮リンク形式にアップグレード。
     """
-    from src.translations.link_check import apply_interwiki_fix
+    from src.translations.link_check import (
+        apply_interwiki_fix,
+        upgrade_bare_interwiki_to_karilink,
+    )
     import json as _json
     from datetime import UTC as _UTC, datetime as _dt
     with connect() as conn:
@@ -643,7 +646,11 @@ def translate_link_fix(qid: str):
         if not translation:
             raise HTTPException(status_code=404, detail=f"no translation for {qid}")
         chunks = translation.get("chunks") or []
-        new_chunks, n_changed = apply_interwiki_fix(chunks)
+        # ① 赤リンク → 仮リンク
+        new_chunks, n_redlink_fix = apply_interwiki_fix(chunks)
+        # ② 既存の [[:en:Foo|display]] (旧形式) も仮リンクに統一
+        new_chunks, n_upgrade = upgrade_bare_interwiki_to_karilink(new_chunks)
+        n_changed = n_redlink_fix + n_upgrade
         if n_changed > 0:
             now = _dt.now(_UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
             conn.execute(
@@ -651,7 +658,11 @@ def translate_link_fix(qid: str):
                 (_json.dumps(new_chunks, ensure_ascii=False), now, qid),
             )
             conn.commit()
-    return {"n_changed": n_changed}
+    return {
+        "n_changed": n_changed,
+        "n_redlink_fix": n_redlink_fix,
+        "n_upgrade_to_karilink": n_upgrade,
+    }
 
 
 @app.get("/translate/{qid}/term_check")

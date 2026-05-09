@@ -215,14 +215,16 @@ def check_chunks(chunks: list[dict]) -> dict:
         r.ja_exists = ja_existence.get(r.target, False)
         if r.en_candidate:
             r.en_exists = en_existence.get(r.en_candidate, False)
-        # suggested replacement
+        # suggested replacement: ja Wikipedia 標準慣行に従い {{仮リンク}} を使う。
+        # {{仮リンク|<日本語表示>|en|<英語タイトル>}}
+        # → ja に該当記事があればそれにリンク、無ければ「<日本語表示>（英語版）」と表示
+        #   して英語版にリンク。将来 ja 記事が作られたら自動で青リンク化される。
         if not r.ja_exists and r.en_candidate and r.en_exists:
-            # [[:en:Foo|display]] の形に
-            r.suggested = f"[[:en:{r.en_candidate}|{r.display}]]"
+            r.suggested = f"{{{{仮リンク|{r.display}|en|{r.en_candidate}}}}}"
         elif not r.ja_exists and r.en_candidate and not r.en_exists:
-            r.suggested = None  # 英語版にもない → リンク自体を外す/手動
+            r.suggested = None
         elif r.ja_exists:
-            r.suggested = None  # 既に OK
+            r.suggested = None
 
     total = len(refs)
     redlinks = [r for r in refs if not r.ja_exists]
@@ -235,6 +237,38 @@ def check_chunks(chunks: list[dict]) -> dict:
         "fixable": len(fixable),
         "links": [r.to_dict() for r in refs],
     }
+
+
+_BARE_INTERWIKI_RE = re.compile(
+    r"\[\[:(?P<lang>en|de|fr|zh|ko|es):(?P<target>[^\[\]|\n]+?)(?:\|(?P<display>[^\[\]\n]+?))?\]\]"
+)
+
+
+def upgrade_bare_interwiki_to_karilink(chunks: list[dict]) -> tuple[list[dict], int]:
+    """
+    `[[:en:Foo|表示]]` 形式の interwiki link を `{{仮リンク|表示|en|Foo}}` に
+    アップグレードする。ja Wikipedia の標準慣行に従い、表示には自動的に
+    「（英語版）」が付き、ja 側に同名記事ができたら自動で青リンク化される。
+    """
+    n_changed = 0
+    new_chunks = []
+    for ch in chunks:
+        ch = dict(ch)
+        dst = ch.get("dst", "") or ""
+
+        def _replace(m: re.Match) -> str:
+            nonlocal n_changed
+            lang = m.group("lang")
+            target = (m.group("target") or "").strip()
+            display = (m.group("display") or target).strip()
+            if not target:
+                return m.group(0)
+            n_changed += 1
+            return f"{{{{仮リンク|{display}|{lang}|{target}}}}}"
+
+        ch["dst"] = _BARE_INTERWIKI_RE.sub(_replace, dst)
+        new_chunks.append(ch)
+    return new_chunks, n_changed
 
 
 def apply_interwiki_fix(chunks: list[dict]) -> tuple[list[dict], int]:
