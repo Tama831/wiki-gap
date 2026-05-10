@@ -734,29 +734,6 @@ def translate_handoff_log(qid: str, body: HandoffLog):
     return {"ok": True}
 
 
-@app.get("/_debug/publish_log/{qid}")
-def debug_publish_log(qid: str):
-    """デバッグ専用: 指定 qid の publish_log + ROW_NUMBER 結果"""
-    with connect(read_only=True) as conn:
-        rows = list(conn.execute(
-            "SELECT id, status, target_lang, target_title, posted_at "
-            "FROM publish_log WHERE qid = ? ORDER BY posted_at DESC LIMIT 10",
-            (qid,)
-        ))
-        latest = conn.execute(
-            "SELECT qid, target_lang, target_title FROM ("
-            "  SELECT qid, target_lang, target_title, "
-            "         ROW_NUMBER() OVER (PARTITION BY qid ORDER BY posted_at DESC) AS rn "
-            "  FROM publish_log WHERE status IN ('success', 'handoff_opened')"
-            ") WHERE rn = 1 AND qid = ?",
-            (qid,)
-        ).fetchone()
-    return {
-        "all_publish_log": [dict(r) for r in rows],
-        "latest_via_row_number": dict(latest) if latest else None,
-    }
-
-
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz():
     try:
