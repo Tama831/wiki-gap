@@ -32,7 +32,17 @@
             <td>{{ it.qid }}</td>
             <td>{{ it.en_title }}</td>
             <td>{{ it.ja_title_proposed or "—" }}</td>
-            <td>{{ it.status }}</td>
+            <td>
+              {% if it.status == "submitted" %}
+                <span class="status-pill status-submitted">✅ 投稿済</span>
+              {% elif it.status == "review" %}
+                <span class="status-pill status-review">👀 レビュー</span>
+              {% elif it.status == "draft" %}
+                <span class="status-pill status-draft">📝 下書き</span>
+              {% else %}
+                <span class="muted">{{ it.status }}</span>
+              {% endif %}
+            </td>
             <td class="muted">{{ it.updated_at[:19] }}</td>
             <td><a href="/translate/{{ it.qid }}" role="button">開く</a></td>
           </tr>
