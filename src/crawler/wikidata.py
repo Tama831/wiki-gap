@@ -79,21 +79,16 @@ def _sparql_endpoint() -> str:
     return os.getenv("WIKIDATA_SPARQL_ENDPOINT", "https://query.wikidata.org/sparql")
 
 
-def _build_query(root_qid: str, limit: int | None) -> str:
+def _build_query(root_qid: str, limit: int | None, offset: int = 0) -> str:
     """
-    指定 root QID の配下にある item を取得する。
+    指定 root QID の配下にある item を取得する (OFFSET ページング対応)。
 
-    パターン: ?item wdt:P31/wdt:P279* wd:<root>
-      = item は X の instance であり、X は <root> の transitive subclass
-
-    sitelinks フィルタ: 英語版か日本語版のいずれかに記事がある item に絞る
-    (両方無い item は意味がない)。
-
-    Note:
-      SERVICE wikibase:label は外して直接 rdfs:label を使う
-      (高負荷時に label service が timeout する事があるため)。
+    OFFSET を機能させるため ORDER BY ?item を必須化。
+    LIMIT が大きい (> 200) と Wikidata SPARQL が partial response 返したり
+    503 を返したりするので、呼び出し側でページング (LIMIT 100 ずつ) する想定。
     """
     limit_clause = f"LIMIT {int(limit)}" if limit is not None else ""
+    offset_clause = f"OFFSET {int(offset)}" if offset > 0 else ""
     return f"""
 SELECT DISTINCT ?item ?enLabel ?jaLabel ?enSitelink ?jaSitelink WHERE {{
   ?item wdt:P31/wdt:P279* wd:{root_qid} .
@@ -111,31 +106,31 @@ SELECT DISTINCT ?item ?enLabel ?jaLabel ?enSitelink ?jaSitelink WHERE {{
   OPTIONAL {{ ?item rdfs:label ?enLabel . FILTER(LANG(?enLabel) = "en") }}
   OPTIONAL {{ ?item rdfs:label ?jaLabel . FILTER(LANG(?jaLabel) = "ja") }}
 }}
+ORDER BY ?item
 {limit_clause}
+{offset_clause}
 """.strip()
 
 
-def fetch_seeds(
-    category: str,
-    limit: int | None = 100,
-    timeout_seconds: float = 60.0,
-    max_retries: int = 3,
-) -> list[SeedItem]:
-    if category not in CATEGORY_ROOTS:
-        raise ValueError(
-            f"unknown category: {category!r} (expected one of {list(CATEGORY_ROOTS)})"
-        )
+# 1 SPARQL クエリでの安全な最大件数 (これ以上は partial response や 503 が増える)
+_SPARQL_PAGE_SIZE = 200
 
-    root_qid = CATEGORY_ROOTS[category]
-    query = _build_query(root_qid, limit)
+
+def _fetch_seeds_one_page(
+    root_qid: str,
+    page_size: int,
+    offset: int,
+    timeout_seconds: float,
+    max_retries: int = 3,
+) -> list[dict]:
+    """SPARQL を 1 ページ分叩いて bindings を返す。失敗時は最後の例外を raise。"""
+    query = _build_query(root_qid, page_size, offset=offset)
     endpoint = _sparql_endpoint()
     headers = {
         "User-Agent": _user_agent(),
         "Accept": "application/sparql-results+json",
     }
-
     last_error: Exception | None = None
-    payload: dict | None = None
     for attempt in range(max_retries):
         try:
             with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
@@ -146,27 +141,77 @@ def fetch_seeds(
                 )
                 response.raise_for_status()
                 payload = response.json()
-                break
+            return payload.get("results", {}).get("bindings", [])
         except (httpx.HTTPError, json.JSONDecodeError) as exc:
             last_error = exc
             if attempt < max_retries - 1:
-                # WDQS recommends >=5s backoff on errors
                 delay = 5 * (2**attempt)
                 print(
-                    f"[wikidata] attempt {attempt + 1}/{max_retries} failed: {exc}. "
-                    f"sleeping {delay}s",
+                    f"[wikidata] OFFSET={offset} attempt {attempt + 1}/{max_retries} "
+                    f"failed: {exc}. sleeping {delay}s",
                     file=sys.stderr,
                 )
                 time.sleep(delay)
-            else:
-                raise
+    raise RuntimeError(f"SPARQL OFFSET={offset} failed after {max_retries} retries") from last_error
 
-    if payload is None:
-        raise RuntimeError("SPARQL fetch did not produce a payload") from last_error
 
-    bindings = payload.get("results", {}).get("bindings", [])
+def fetch_seeds(
+    category: str,
+    limit: int | None = 100,
+    timeout_seconds: float | None = None,
+    max_retries: int = 3,
+) -> list[SeedItem]:
+    """
+    指定カテゴリの seed QID を取得する。
+
+    内部的に LIMIT を _SPARQL_PAGE_SIZE (200) で OFFSET ページング。
+    Wikidata SPARQL の重い LIMIT (1000+) で起きる partial response / 503 を回避。
+    """
+    if category not in CATEGORY_ROOTS:
+        raise ValueError(
+            f"unknown category: {category!r} (expected one of {list(CATEGORY_ROOTS)})"
+        )
+    if timeout_seconds is None:
+        timeout_seconds = 90.0  # 1 ページあたりの timeout (200 件)
+
+    root_qid = CATEGORY_ROOTS[category]
+
+    # ページサイズ: 安全マージンとして 200。LIMIT が無 (= 全件) なら無限 OFFSET。
+    page_size = _SPARQL_PAGE_SIZE
+    target_count = limit  # None なら無制限 (空ページが返るまで)
+
+    all_bindings: list[dict] = []
+    offset = 0
+    page_idx = 0
+    while True:
+        # 残り必要件数があれば、ページサイズと min を取って取得
+        if target_count is not None:
+            remaining = target_count - len(all_bindings)
+            if remaining <= 0:
+                break
+            this_page = min(page_size, remaining)
+        else:
+            this_page = page_size
+
+        bindings = _fetch_seeds_one_page(
+            root_qid, this_page, offset,
+            timeout_seconds=timeout_seconds, max_retries=max_retries,
+        )
+        all_bindings.extend(bindings)
+        page_idx += 1
+        if len(bindings) < this_page:
+            # ページ末まで来た = 全件取得済
+            break
+        offset += this_page
+        # ページ間に短いウェイト (Wikidata に優しく)
+        if target_count is None or len(all_bindings) < target_count:
+            time.sleep(1.0)
+
+    print(f"[wikidata] fetched {len(all_bindings)} bindings in {page_idx} pages", file=sys.stderr)
+
     seeds: list[SeedItem] = []
     seen_qids: set[str] = set()
+    bindings = all_bindings
 
     for row in bindings:
         item_uri = row.get("item", {}).get("value", "")

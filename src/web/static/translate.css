@@ -133,8 +133,9 @@ select.status-inline-select {
 
 .chunk-pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.8rem;
+  /* 英語 wikitext は citation テンプレで長くなりがち、左を少し広め */
+  grid-template-columns: 1.15fr 1fr;
+  gap: 0.7rem;
   align-items: stretch;
 }
 
@@ -148,7 +149,7 @@ select.status-inline-select {
   white-space: pre-wrap;
   word-break: break-word;
   overflow-y: auto;
-  max-height: 55vh;
+  max-height: 70vh;
   line-height: 1.4;
   border: 1px solid transparent;
   transition: border-color 0.2s ease, background-color 0.2s ease;
