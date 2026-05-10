@@ -111,7 +111,12 @@
             {% endif %}
           </td>
           <td class="muted">{{ r.updated_at[:10] if r.updated_at else "—" }}</td>
-          <td><a href="/translate/{{ r.qid }}" role="button" class="outline translate-btn">{% if r.translation_status %}編集{% else %}翻訳{% endif %}</a></td>
+          <td class="action-cell">
+            <a href="/translate/{{ r.qid }}" role="button" class="outline translate-btn">{% if r.translation_status %}編集{% else %}翻訳{% endif %}</a>
+            {% if r.publish_url %}
+              <a href="{{ r.publish_url }}" target="_blank" rel="noopener" role="button" class="outline publish-link-btn" title="{{ r.publish_target_title }} を ja Wikipedia で開く">📄 投稿先</a>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>

@@ -111,9 +111,26 @@ def index(
     sql = (
         "SELECT a.*, t.status AS translation_status, "
         "       t.ja_title_proposed AS translation_ja_title, "
-        "       t.updated_at AS translation_updated "
+        "       t.updated_at AS translation_updated, "
+        "       p.target_lang AS publish_target_lang, "
+        "       p.target_title AS publish_target_title "
         "FROM articles a "
-        "LEFT JOIN translations t ON a.qid = t.qid"
+        "LEFT JOIN translations t ON a.qid = t.qid "
+        "LEFT JOIN ("
+        "    SELECT qid, target_lang, target_title, "
+        "           ROW_NUMBER() OVER ("
+        "             PARTITION BY qid "
+        "             ORDER BY "
+        "               CASE "
+        "                 WHEN target_namespace IN ('利用者', 'User') THEN 0 "
+        "                 WHEN target_namespace IN ('Draft', 'Wikipedia') THEN 1 "
+        "                 ELSE 2 "
+        "               END, "
+        "               posted_at DESC"
+        "           ) AS rn "
+        "    FROM publish_log "
+        "    WHERE status IN ('success', 'handoff_opened')"
+        ") p ON a.qid = p.qid AND p.rn = 1"
         + where_clause
         + f" ORDER BY a.{sort_col} {direction.upper()} {null_pos} LIMIT ?"
     )
@@ -132,11 +149,17 @@ def index(
 
     enriched = []
     for r in rows:
-        enriched.append({
-            **dict(r),
-            "en_url": _wikipedia_url("en", r["en_title"]),
-            "ja_url": _wikipedia_url("ja", r["ja_title"]),
-        })
+        d = dict(r)
+        # 投稿先 URL を組み立てる (publish_log から取れていれば)
+        publish_url = None
+        if d.get("publish_target_lang") and d.get("publish_target_title"):
+            from urllib.parse import quote
+            t = d["publish_target_title"].replace(" ", "_")
+            publish_url = f"https://{d['publish_target_lang']}.wikipedia.org/wiki/{quote(t, safe=':/')}"
+        d["publish_url"] = publish_url
+        d["en_url"] = _wikipedia_url("en", r["en_title"])
+        d["ja_url"] = _wikipedia_url("ja", r["ja_title"])
+        enriched.append(d)
 
     return templates.TemplateResponse(
         request,

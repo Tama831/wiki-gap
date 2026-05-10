@@ -65,8 +65,25 @@ span.status-pill.status-review {
   color: #1c4a73;
 }
 span.status-pill.status-submitted {
-  background: rgba(80, 200, 120, 0.16);
-  border-color: rgba(80, 200, 120, 0.45);
-  color: #2a6a3d;
+  background: rgba(70, 130, 220, 0.18);
+  border-color: rgba(70, 130, 220, 0.55);
+  color: #1c4a90;
   font-weight: 600;
+}
+
+td.action-cell {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+a.publish-link-btn {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+  border-color: rgba(70, 130, 220, 0.55) !important;
+  color: #1c4a90 !important;
+}
+a.publish-link-btn:hover {
+  background: rgba(70, 130, 220, 0.10);
 }
