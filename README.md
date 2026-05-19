@@ -126,10 +126,10 @@ journalctl -u wiki-gap-crawl.service -n 50
 ```
 
 ### Tailscale 経由でダッシュボードにアクセス
-- ダッシュボードは Tailscale IP (`100.104.67.25:8766`) に bind (public IP には漏らさない)
-- Tailnet 内のデバイス (Mac / iPhone / iPad など) からは `http://100.104.67.25:8766` で見れる
+- ダッシュボードは Tailscale IP (`<ipaddress>:8766`) に bind (public IP には漏らさない)
+- Tailnet 内のデバイス (Mac / iPhone / iPad など) からは `http://<ipaddress>:8766` で見れる
 - 他人 (Tailnet 外) からは IP もポートも見えない
-- Hetzner ノードの Tailscale IP は `tailscale ip -4` で確認
+- 外部専用ノードの Tailscale IP は `tailscale ip -4` で確認
 
 ## トラブルシュート
 
@@ -151,7 +151,7 @@ journalctl -u wiki-gap-crawl.service -n 50
 | Librarian (司書) | top100 を関心マップに照らして優先 10 件抽出 | Phase 1 完走後 |
 | Analyst | ギャップ記事の医学的背景を Deep Dive 化 | Phase 1 完走後 |
 | Scribe | ギャップ記事を研修医勉強会ネタに変換 | Phase 1 完走後 |
-| Editor | tama さんの草稿を校正・ファクトチェック | Phase 2A 後 |
+| Editor | 草稿を校正・ファクトチェック | Phase 2A 後 |
 
 ## ロードマップ
 
@@ -166,4 +166,4 @@ journalctl -u wiki-gap-crawl.service -n 50
 
 ## ライセンス
 
-未定 (たまさん本人のツール)。
+未定 (個人のツール)。
