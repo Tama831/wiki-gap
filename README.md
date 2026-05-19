@@ -53,9 +53,10 @@ python scripts/run_crawl.py --category disease --limit 1000   # 段階1
 python scripts/run_crawl.py --category disease --limit 0      # 段階2 (無制限)
 python scripts/run_crawl.py --all --limit 0                   # 段階3 (全カテゴリ)
 
-# ダッシュボード起動 (Tailscale IP 限定 bind = public IP には漏らさない)
-# Hetzner の Tailscale IP は `tailscale ip -4` で確認 (例: 100.104.67.25)
-uvicorn src.web.app:app --host 100.104.67.25 --port 8766
+# ダッシュボード起動
+# - ローカルだけで使う: --host 127.0.0.1
+# - Tailscale 越しに見る: --host <自分の Tailscale IP> (`tailscale ip -4` で確認)
+uvicorn src.web.app:app --host $WIKI_GAP_BIND_HOST --port $WIKI_GAP_BIND_PORT
 ```
 
 > **Note**: 後日 [uv](https://docs.astral.sh/uv/) への移行も `pyproject.toml` を維持しているのでそのまま `uv sync` で動きます。
@@ -141,18 +142,6 @@ journalctl -u wiki-gap-crawl.service -n 50
 | systemd timer 動かない | `journalctl -u wiki-gap-crawl.service -n 100` |
 | User-Agent placeholder のまま | `.env` の `WIKI_GAP_CONTACT_URL` を実値に差し替え (フルクロール前必須) |
 
-## ai-agent-team との連携 (Phase 1 範囲外)
-
-`~/ai-agent-team/` 側のエージェントが `~/wiki-gap/data/wiki_gap.db` を **read-only** で参照することを想定。逆方向 (wiki-gap が agent-team を呼ぶ) は循環依存防止のため作らない。
-
-| エージェント | 連携内容 | 有効化 |
-|---|---|---|
-| briefing (Conductor) | 朝の briefing に「今日のギャップ top3」差し込み | Phase 1 完走後 |
-| Librarian (司書) | top100 を関心マップに照らして優先 10 件抽出 | Phase 1 完走後 |
-| Analyst | ギャップ記事の医学的背景を Deep Dive 化 | Phase 1 完走後 |
-| Scribe | ギャップ記事を研修医勉強会ネタに変換 | Phase 1 完走後 |
-| Editor | 草稿を校正・ファクトチェック | Phase 2A 後 |
-
 ## ロードマップ
 
 - **Phase 1** (now): ダッシュボード = ギャップ検出のみ
@@ -166,4 +155,12 @@ journalctl -u wiki-gap-crawl.service -n 50
 
 ## ライセンス
 
-未定 (個人のツール)。
+[MIT License](LICENSE) — Copyright (c) 2026 Tama831
+
+自由に使用・改変・再配布できます (著作権表示を残す必要あり)。
+
+> **データ側のライセンスとは別**: wiki-gap が取得・処理する Wikipedia コンテンツ
+> (記事 wikitext、メタデータ、pageviews 等) は Wikimedia Foundation によって
+> **CC BY-SA 4.0 / GFDL** で配布されています。そのデータを使って翻訳記事を投稿する際は、
+> [[Wikipedia:翻訳のガイドライン]] に従って翻訳元と版番号 (oldid) を編集要約に記載してください
+> (wiki-gap の publish ハンドオフは自動でこの形式に整えてくれます)。
