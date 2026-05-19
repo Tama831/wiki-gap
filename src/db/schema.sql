@@ -107,3 +107,16 @@ CREATE TABLE IF NOT EXISTS publish_log (
 CREATE INDEX IF NOT EXISTS idx_publish_qid ON publish_log(qid, posted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_publish_posted ON publish_log(posted_at DESC);
 
+-- ─────────────────────────────────────────────────────────────────
+-- Phase 2C: 利用者ページ管理 (テンプレート + placeholder 自動展開)
+-- ─────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS user_pages (
+  id INTEGER PRIMARY KEY,           -- 1 行のみ
+  username TEXT,                    -- "Goyama2128"
+  lang TEXT NOT NULL DEFAULT 'ja',  -- 投稿先言語 (通常 ja)
+  template_wikitext TEXT NOT NULL,  -- placeholder を含む wikitext テンプレ
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+

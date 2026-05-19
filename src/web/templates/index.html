@@ -14,6 +14,7 @@
       <p class="muted">
         total: {{ total }} articles · sorted by <strong>{{ sort }}</strong> ({{ direction }}) · category: <strong>{{ category or "all" }}</strong>
         · <a href="/translations">📝 翻訳プロジェクト ({{ n_translations }})</a>
+        · <a href="/user-page">👤 利用者ページ管理</a>
         {% if status_counts %}
           ·
           {% if status_counts.get('draft') %}<span class="status-pill status-draft">📝 下書き {{ status_counts['draft'] }}</span>{% endif %}

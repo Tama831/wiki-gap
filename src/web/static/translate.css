@@ -169,6 +169,35 @@ select.status-inline-select {
 .chunk.type-heading .chunk-pair textarea.dst { min-height: 2.4em; }
 .chunk.type-heading .chunk-pair pre.src { max-height: 4em; }
 
+/* 利用者ページ管理用 (Phase 2C) */
+.up-editor {
+  padding: 0.4rem 0.6rem;
+}
+.up-editor h3 {
+  font-size: 0.95rem;
+  margin: 0.8rem 0 0.3rem;
+}
+.up-editor textarea#user-page-template {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  width: 100%;
+  resize: vertical;
+}
+.up-expanded {
+  background: rgba(80, 130, 200, 0.06);
+  border: 1px solid rgba(80, 130, 200, 0.25);
+  border-radius: 0.3rem;
+  padding: 0.6rem 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
 /* sentence-level highlight (Phase 2A.6) */
 .chunk-pair pre.src .sentence {
   display: inline;

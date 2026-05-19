@@ -29,6 +29,7 @@ from pydantic import BaseModel
 
 from src.db.queries import article_count, connect, top_gap_articles
 from src.translations import service as translations_service
+from src.user_page import service as user_page_service
 from src.wiki_auth import oauth as wiki_oauth
 from src.wiki_auth import service as wiki_auth_service
 from src.wiki_auth.client import WikiClient
@@ -732,6 +733,80 @@ def translate_handoff_log(qid: str, body: HandoffLog):
             status="handoff_opened",
         )
     return {"ok": True}
+
+
+# ─────────────────────────────────────────────────────────────────
+# Phase 2C: 利用者ページ管理
+# ─────────────────────────────────────────────────────────────────
+
+
+@app.get("/user-page", response_class=HTMLResponse)
+def user_page_index(request: Request):
+    with connect() as conn:
+        auth = wiki_auth_service.get_auth(conn)
+        default_user = (auth or {}).get("username")
+        page = user_page_service.get_or_init_user_page(conn, default_user)
+        expanded = user_page_service.expand_placeholders(page["template_wikitext"], conn)
+    return templates.TemplateResponse(
+        request, "user_page.html",
+        {"page": page, "expanded": expanded, "wiki_username": (auth or {}).get("username")},
+    )
+
+
+class UserPageSave(BaseModel):
+    template_wikitext: str
+    username: str | None = None
+    lang: str | None = None
+
+
+@app.put("/user-page")
+def user_page_save(body: UserPageSave):
+    with connect() as conn:
+        user_page_service.save_user_page(
+            conn, body.template_wikitext,
+            username=body.username, lang=body.lang,
+        )
+    return {"ok": True}
+
+
+@app.get("/user-page/expanded")
+def user_page_expanded():
+    """テンプレを placeholder 展開した wikitext を返す (clipboard 用)"""
+    with connect() as conn:
+        page = user_page_service.get_or_init_user_page(conn)
+        expanded = user_page_service.expand_placeholders(page["template_wikitext"], conn)
+    return PlainTextResponse(expanded)
+
+
+@app.get("/user-page/preview", response_class=HTMLResponse)
+def user_page_preview(request: Request):
+    """展開後 wikitext を MediaWiki Parse API で HTML レンダリング"""
+    with connect() as conn:
+        page = user_page_service.get_or_init_user_page(conn)
+        expanded = user_page_service.expand_placeholders(page["template_wikitext"], conn)
+    import httpx as _httpx
+    lang = page.get("lang") or "ja"
+    url = f"https://{lang}.wikipedia.org/w/api.php"
+    params = {
+        "action": "parse", "text": expanded, "contentmodel": "wikitext",
+        "prop": "text", "disablelimitreport": "1", "format": "json", "maxlag": "30",
+    }
+    headers = {"User-Agent": _wiki_user_agent()}
+    try:
+        with _httpx.Client(timeout=30.0, headers=headers) as client:
+            r = client.post(url, data=params)
+            r.raise_for_status()
+            payload = r.json()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Parse API error: {exc}")
+    if "error" in payload:
+        raise HTTPException(status_code=502, detail=f"MediaWiki: {payload['error']}")
+    rendered_html = (payload.get("parse") or {}).get("text", {}).get("*", "")
+    title = f"利用者:{page.get('username') or '<未設定>'}"
+    return templates.TemplateResponse(
+        request, "preview.html",
+        {"qid": "user-page", "title": title, "html": rendered_html, "lang": lang},
+    )
 
 
 @app.get("/healthz", response_class=PlainTextResponse)
