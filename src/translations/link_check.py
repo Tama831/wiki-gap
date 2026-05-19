@@ -30,7 +30,7 @@ INTERWIKI_RE = re.compile(r"^:?(en|de|fr|zh|ko|es|meta|mw|wikt|commons|wikidata|
 
 
 def _user_agent() -> str:
-    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/Tama831/wiki-gap")
+    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/YOUR_USER/wiki-gap")
     return f"WikiGapDetector/0.1 ({contact})"
 
 

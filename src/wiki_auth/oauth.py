@@ -31,11 +31,11 @@ TOKEN_URL = "https://meta.wikimedia.org/w/rest.php/oauth2/access_token"
 
 
 def _user_agent() -> str:
-    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/Tama831/wiki-gap")
+    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/YOUR_USER/wiki-gap")
     return f"WikiGapDetector/0.1 ({contact})"
 
 
-_HTTP_HEADERS = {"User-Agent": "WikiGapDetector/0.1 (https://github.com/Tama831/wiki-gap)"}
+_HTTP_HEADERS = {"User-Agent": "WikiGapDetector/0.1 (https://github.com/YOUR_USER/wiki-gap)"}
 
 
 @dataclass
@@ -64,7 +64,7 @@ def _client_secret() -> str:
 def callback_url() -> str:
     return os.getenv(
         "WIKIPEDIA_OAUTH_CALLBACK",
-        "http://100.104.67.25:8766/wiki/oauth/callback",
+        "http://127.0.0.1:8766/wiki/oauth/callback",
     )
 
 

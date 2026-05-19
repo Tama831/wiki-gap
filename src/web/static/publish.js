@@ -283,9 +283,10 @@
       // Wikipedia 翻訳ガイドライン準拠の編集要約 (履歴継承 = oldid 必須)
       const sourceLang = lang === "ja" ? "en" : "ja";
       const oldidPart = sourceRevid ? ` (oldid=${sourceRevid})` : "";
+      const toolUrl = window.WIKI_GAP_CONTACT_URL || "https://github.com/YOUR_USER/wiki-gap";
       const defaultSummary =
         `[[:${sourceLang}:${enTitle}]]${oldidPart} を翻訳 ` +
-        `[wiki-gap (https://github.com/Tama831/wiki-gap) で機械翻訳支援、医師が全文レビュー]`;
+        `[wiki-gap (${toolUrl}) で機械翻訳支援、医師が全文レビュー]`;
       const summary = (summaryInput.value || "").trim() || defaultSummary;
 
       confirmBtn.disabled = true;

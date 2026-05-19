@@ -80,7 +80,7 @@ CREATE INDEX IF NOT EXISTS idx_translations_status ON translations(status);
 -- 単一ユーザ前提 (id=1 のみ)
 CREATE TABLE IF NOT EXISTS wiki_auth (
   id INTEGER PRIMARY KEY,
-  username TEXT,                     -- Wikipedia ユーザ名 (取得後に埋まる)
+  username TEXT,                     -- Wikipedia ユーザ名 (OAuth 後に埋まる)
   user_id INTEGER,                   -- Wikipedia user id
   access_token TEXT NOT NULL,
   refresh_token TEXT,

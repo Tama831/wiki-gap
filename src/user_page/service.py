@@ -4,9 +4,12 @@
 サポート placeholder:
   {{wiki_gap:translated_articles}}
     → translations.status='submitted' から投稿済記事の箇条書きを生成
-    例:
-      * [[N-of-1試験]] (2026年5月)
-      * [[利用者:Goyama2128/Foo|Foo]] (2026年6月) ← 個人サブページの場合
+    例 (本記事に投稿された場合):
+      * [[Some Article]] (2026年5月)
+    例 (利用者サブページに投稿された場合):
+      * [[利用者:Username/Foo|Foo]] (2026年6月)
+  {{wiki_gap:username}}
+    → wiki_auth テーブルから取得した Wikipedia ユーザ名 (OAuth ログイン時に保存)
 """
 from __future__ import annotations
 
@@ -21,26 +24,18 @@ def now_iso() -> str:
 
 DEFAULT_TEMPLATE = """== このアカウントについて ==
 
-日本の[[家庭医療|家庭医]]です。「学び方をデザインする」を活動テーマに、
-医学領域での日本語版ウィキペディアの整備と、日本特有の医療事例の追記に関心があります。
+<!-- 自由に書き換えてください。以下は雛形です。 -->
+日本語版ウィキペディアの整備に少しずつ参加しています。
 
 特に関心のある分野:
-* [[家庭医療]] / [[総合診療]]
-* [[エビデンスに基づく医療]] (EBM)
-* [[希少疾患]] / [[指定難病]]
-* [[個別化医療]] / N-of-1試験
-* 医学教育・学習設計
+* (関心分野 1)
+* (関心分野 2)
 
 == 編集の方針 ==
 
 * 英語版からの翻訳記事は、[[Wikipedia:翻訳のガイドライン]] に従い、編集要約に翻訳元の言語間リンクと版番号 (oldid) を必ず記載します。
-* 機械翻訳支援ツール ([[#使用しているツール|下記]]) を用いる場合も、医師として全文を通読し、専門用語の妥当性 (MeSH / 日本医学会医学用語辞典 / ja Wikipedia 既存記事) を確認した上で投稿します。
-* 日本語版に該当記事がない用語は {{tlp|仮リンク}} で英語版へのリンクを残し、将来 ja 側に記事ができたら自動的に青リンク化されるようにしています。
-
-== 使用しているツール ==
-
-* '''[https://github.com/Tama831/wiki-gap wiki-gap]'''
-  : 日英ウィキペディアの医学系記事の情報量ギャップを検出し、翻訳の下書き作成・専門用語チェック・リンク整備を支援する自作ツール。[[m:User-Agent policy|Wikimedia API エチケット]] (User-Agent 明記、maxlag、1.5 req/sec) に従って動作します。
+* 機械翻訳支援ツールを用いる場合も、人手で全文を通読・確認した上で投稿します。
+* 日本語版に該当記事がない用語は {{tlp|仮リンク}} で英語版へのリンクを残します。
 
 == これまでに翻訳した記事 ==
 
@@ -48,7 +43,7 @@ DEFAULT_TEMPLATE = """== このアカウントについて ==
 
 == 連絡 ==
 
-ご意見・修正のご提案は[[利用者・トーク:Goyama2128|私のトークページ]]までお気軽にどうぞ。
+ご意見・修正のご提案は[[利用者・トーク:{{wiki_gap:username}}|私のトークページ]]までお気軽にどうぞ。
 
 == Babel ==
 
@@ -163,11 +158,26 @@ def _gen_translated_articles_list(conn: sqlite3.Connection) -> str:
     return "\n".join(items)
 
 
+def _get_username(conn: sqlite3.Connection) -> str:
+    row = conn.execute(
+        "SELECT username FROM user_pages WHERE id = 1"
+    ).fetchone()
+    if row and row["username"]:
+        return row["username"]
+    # fallback: wiki_auth テーブル
+    row = conn.execute("SELECT username FROM wiki_auth WHERE id = 1").fetchone()
+    if row and row["username"]:
+        return row["username"]
+    return "<username>"
+
+
 def expand_placeholders(template: str, conn: sqlite3.Connection) -> str:
     """テンプレ内の {{wiki_gap:<name>}} を実値に置換する。"""
     def _replace(m: re.Match) -> str:
         name = m.group("name")
         if name == "translated_articles":
             return _gen_translated_articles_list(conn)
+        if name == "username":
+            return _get_username(conn)
         return m.group(0)  # 未知の placeholder はそのまま残す
     return _PLACEHOLDER_RE.sub(_replace, template)

@@ -289,6 +289,7 @@ def translate_page(request: Request, qid: str):
             "article": article,
             "translation": translation,
             "sections": sections,
+            "contact_url": _wiki_user_agent_url(),
         },
     )
 
@@ -355,9 +356,12 @@ def translate_update_meta(qid: str, body: MetaUpdate):
     return {"ok": True}
 
 
+def _wiki_user_agent_url() -> str:
+    return os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/YOUR_USER/wiki-gap")
+
+
 def _wiki_user_agent() -> str:
-    contact = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/Tama831/wiki-gap")
-    return f"WikiGapDetector/0.1 ({contact})"
+    return f"WikiGapDetector/0.1 ({_wiki_user_agent_url()})"
 
 
 @app.get("/translate/{qid}/preview", response_class=HTMLResponse)
@@ -590,7 +594,7 @@ def translate_publish(qid: str, body: PublishRequest):
     full_title = f"{namespace}:{base_title}" if namespace else base_title
 
     # 編集要約
-    contact_url = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/Tama831/wiki-gap")
+    contact_url = os.getenv("WIKI_GAP_CONTACT_URL", "https://github.com/YOUR_USER/wiki-gap")
     auto_summary = body.summary or (
         f"翻訳支援ツール (wiki-gap, {contact_url}) を用いた "
         f"[[:{body.target_lang}:{translation.get('en_title', '')}]] からの翻訳下書き"

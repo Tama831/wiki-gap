@@ -196,6 +196,7 @@
     window.WIKI_GAP_EN_TITLE = {{ ((translation or {}).get('en_title') or '') | tojson }};
     window.WIKI_GAP_SOURCE_REVID = {{ ((translation or {}).get('source_revision_id') or 0) | tojson }};
     window.WIKI_GAP_CHUNKS_TOTAL = {{ ((translation or {}).get('chunks') or [])|length }};
+    window.WIKI_GAP_CONTACT_URL = {{ contact_url | tojson }};
   </script>
   <script src="/static/translate.js" defer></script>
   <script src="/static/publish.js" defer></script>

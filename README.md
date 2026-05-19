@@ -2,6 +2,24 @@
 
 英語版と日本語版 Wikipedia の医学系記事の **情報量ギャップを検出** し、日本語版への加筆・翻訳の起点を提供するツール。
 
+> ⚠️ **これは個人ツール (single-user tool) です**
+> 1 つの Wikimedia アカウントに紐づく形で運用される設計です。fork して別の人が使う場合は、下の「[Fork して自分用にセットアップする](#fork-して自分用にセットアップする)」セクションを参照してください。
+> リポジトリ内に作者個人 (Wikipedia ユーザ名・GitHub 等) を示唆する記述があれば、すべて環境変数または初回セットアップで上書きできるようにしてあります。
+
+## Fork して自分用にセットアップする
+
+1. **Fork** このリポジトリを自分の GitHub アカウントへ
+2. **clone** + `cp .env.example .env` してから `.env` を編集:
+   - `WIKI_GAP_CONTACT_URL=https://github.com/<your-username>/wiki-gap` (User-Agent に必須)
+   - `WIKI_GAP_BIND_HOST` — ローカルなら `127.0.0.1`、Tailscale IP に bind なら `tailscale ip -4` 出力
+   - `WIKIPEDIA_OAUTH_CLIENT_ID` / `_SECRET` / `_CALLBACK` — [Wikimedia OAuth 2.0 consumer](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2) を登録して取得
+3. `python3 -m venv .venv && . .venv/bin/activate && pip install -e .`
+4. `python scripts/init_db.py`
+5. `uvicorn src.web.app:app --host $WIKI_GAP_BIND_HOST --port $WIKI_GAP_BIND_PORT`
+6. ブラウザで `/user-page` を開いて利用者ページのテンプレートを自分用に書き換え (DEFAULT_TEMPLATE は汎用雛形になっています)
+
+詳しい構成と運用は以降のセクションを参照。
+
 > **方針**: 記事の自動生成・自動投稿はしません。本ツールは **検出 → 人間 (医師) の編集を支援** するだけです。Wikipedia の LLM 利用ポリシーと両立する設計です。
 
 ## 設計コンセプト
