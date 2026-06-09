@@ -65,4 +65,4 @@ ALTER TABLE articles ADD COLUMN coverage_set_at TEXT;  -- ISO8601
 
 ## いつやるか
 
-Phase 2A (N-of-1 trial エディタ) の前 = Phase 1 の段階フルクロール (drug/procedure 全件) の後。
+Phase 2A (翻訳エディタ) の前 = Phase 1 の段階フルクロール (drug/procedure 全件) の後。
