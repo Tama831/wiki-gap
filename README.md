@@ -3,16 +3,20 @@
 英語版と日本語版 Wikipedia の医学系記事の **情報量ギャップを検出** し、日本語版への加筆・翻訳の起点を提供するツール。
 
 > ⚠️ **これは個人ツール (single-user tool) です**
-> 1 つの Wikimedia アカウントに紐づく形で運用される設計です。fork して別の人が使う場合は、下の「[Fork して自分用にセットアップする](#fork-して自分用にセットアップする)」セクションを参照してください。
+> 1 つの Wikimedia アカウントに紐づく形で運用される設計です。別の人が自分用に使う場合は、下の「[自分用にセットアップする](#自分用にセットアップする)」セクションを参照してください。
 > リポジトリ内に作者個人 (Wikipedia ユーザ名・GitHub 等) を示唆する記述があれば、すべて環境変数または初回セットアップで上書きできるようにしてあります。
 
-## Fork して自分用にセットアップする
+## 自分用にセットアップする
 
-1. **Fork** このリポジトリを自分の GitHub アカウントへ
-2. **clone** + `cp .env.example .env` してから `.env` を編集:
-   - `WIKI_GAP_CONTACT_URL=https://github.com/<your-username>/wiki-gap` (User-Agent に必須)
-   - `WIKI_GAP_BIND_HOST` — ローカルなら `127.0.0.1`、Tailscale IP に bind なら `tailscale ip -4` 出力
-   - `WIKIPEDIA_OAUTH_CLIENT_ID` / `_SECRET` / `_CALLBACK` — [Wikimedia OAuth 2.0 consumer](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2) を登録して取得
+1. **入手**: `git clone` でこのリポジトリを手元に置きます (GitHub アカウントは不要)。改変版を自分で公開したい人だけ fork してください。
+2. `cp .env.example .env` して `.env` を編集します。**必ず要るのは 1 つだけ**:
+
+   **必須**
+   - `WIKI_GAP_CONTACT_URL` — Wikimedia に渡す**連絡先**。このツールの API リクエストが問題を起こしたとき、運営があなたに連絡するための欄です ([Wikimedia の User-Agent ポリシー](https://foundation.wikimedia.org/wiki/Policy:User-Agent_policy)で必須)。**GitHub である必要はありません** — メール・自分の Web サイト・Wikipedia 利用者ページの URL など、連絡が取れるものなら何でも OK。例: `https://ja.wikipedia.org/wiki/利用者:あなたの名前`
+
+   **任意 (触らなくても動きます)**
+   - `WIKI_GAP_BIND_HOST` — 既定は `127.0.0.1` (このマシンの中だけ)。Tailscale 越しに見たいときだけ `tailscale ip -4` の出力に変えます
+   - `WIKIPEDIA_OAUTH_CLIENT_ID` / `_SECRET` / `_CALLBACK` — **Wikipedia へ投稿する機能を使うときだけ**必要。ギャップを眺めるだけなら空のままで OK。使う場合は [Wikimedia OAuth 2.0 consumer](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2) を登録して取得します
 3. `python3 -m venv .venv && . .venv/bin/activate && pip install -e .`
 4. `python scripts/init_db.py`
 5. `uvicorn src.web.app:app --host $WIKI_GAP_BIND_HOST --port $WIKI_GAP_BIND_PORT`
@@ -40,7 +44,7 @@ pip install -e .
 
 # 環境変数の設定
 cp .env.example .env
-# .env を編集して WIKI_GAP_CONTACT_URL に GitHub リポ URL を入れる
+# .env を編集して WIKI_GAP_CONTACT_URL に連絡先 (メール / Web / Wikipedia 利用者ページ等) を入れる
 
 # DB 初期化
 python scripts/init_db.py
@@ -99,7 +103,7 @@ Pageviews API ──┘
 
 Wikimedia のインフラに迷惑をかけないため:
 
-- **User-Agent**: `WikiGapDetector/0.1 (<WIKI_GAP_CONTACT_URL>)`
+- **User-Agent**: `WikiGapDetector/0.1 (<WIKI_GAP_CONTACT_URL>)` — 括弧内は連絡先 (メール / Web / Wikipedia 利用者ページのいずれか)
 - **maxlag**: `5` (MediaWiki API)
 - **レート**: 1.5 req/sec, 並列 3
 - **backoff**: 429 / `maxlag` エラーは exponential (1 → 2 → 4 → ... 最大 60s)
@@ -140,7 +144,7 @@ journalctl -u wiki-gap-crawl.service -n 50
 | MediaWiki API 429 | `--rate-limit 0.5` に下げる |
 | ダッシュボードが空 | `data/wiki_gap.db` の有無 / `articles` の行数 (`/healthz` で件数表示) |
 | systemd timer 動かない | `journalctl -u wiki-gap-crawl.service -n 100` |
-| User-Agent placeholder のまま | `.env` の `WIKI_GAP_CONTACT_URL` を実値に差し替え (フルクロール前必須) |
+| User-Agent placeholder のまま | `.env` の `WIKI_GAP_CONTACT_URL` を自分の連絡先に差し替え (フルクロール前必須) |
 
 ## ロードマップ
 
